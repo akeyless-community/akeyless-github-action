@@ -1,0 +1,70 @@
+name: 'Akeyless Authentication and fetching secrets'
+description: 'Akeyless Authentication and fetching secrets'
+inputs:
+  # Authentication input
+  access-id:
+    description: 'Akeyless Access ID'
+    required: true
+  access-type:
+    description: 'The method to use to authenticate with Akeyless Vault.'
+    default: 'jwt'
+    required: false
+  api-url:
+    description: 'The API endpoint to use, defaults to https://api.akeyless.io.'
+    default: 'https://api.akeyless.io'
+    required: false
+  access-key:
+    description: 'Akeyless Access Key'
+    required: false
+  gcp-audience:
+    description: 'GCP audience to use in signed JWT (relevant only for access-type=gcp)'
+    default: 'akeyless.io'
+    required: false
+  gateway-url:
+    description: 'Gateway URL for the K8S authenticated (relevant only for access-type=k8s)'
+    required: false
+  k8s-auth-config-name:
+    description: 'The K8S Auth config name (relevant only for access-type=k8s)'
+    required: false
+  k8s-service-account-token:
+    description: "The K8S service account token"
+    required: false
+  ca-certificate:
+    description: 'The CA certificate for the authentication to gateway'
+    required: false
+
+  # secrets input
+  static-secrets:
+    description: 'A JSON object as a string, with a list of static secrets to fetch. The key should be the path to the secret and the value should be the name of the environment variable/output to save it to.'
+    required: false
+  dynamic-secrets:
+    description: 'A JSON object as a string, with a list of dynamic secrets to fetch. The key should be the path to the secret and the value should be the name of the environment variable/output to save it to.'
+    required: false
+  rotated-secrets:
+    description: 'A JSON object as a string, with a list of rotated secrets to fetch. The key should be the path to the secret and the value should be the name of the environment variable/output to save it to.'
+    required: false
+  ssh-certificates:
+    description: 'A JSON object as a string, with a list of SSH certificates params object. certificate issuer name + certificate username + public key data + output name'
+    required: false
+  pki-certificates:
+    description: 'A JSON object as a string, with a list of PKI certificates params object. certificate issuer name + CSR data + output name'
+    required: false
+  export-secrets-to-outputs:
+    description: 'True/False to denote if static/dynamic secrets should be exported as environment variables..'
+    required: false
+    default: true
+  export-secrets-to-environment:
+    description: 'True/False to denote if static/dynamic secrets should be exported as action outputs.'
+    required: false
+    default: true
+  generate-separate-output:
+    description: 'True/False to denote if dynamic/rotated secrets will exported as a single object, or parsed into individual outputs/env variables.'
+    required: false
+    default: false
+
+outputs:
+  token:
+    description: 'Akeyless Token'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
