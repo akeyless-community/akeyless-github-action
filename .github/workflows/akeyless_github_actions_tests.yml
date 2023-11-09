@@ -1,0 +1,41 @@
+name: Akeyless Github Action Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # You can trigger the workflow manually
+
+jobs:
+  fetch_secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Akeyless Authentication and fetch secret Step
+        uses: ./
+        id: fetch-secrets
+        with:
+          access-id: ${{ secrets.AKEYLESS_ACCESS_ID }}
+          access-type: jwt
+          static-secrets: '{"/akeyless-github-action/github-static-secret":"my_first_secret"}'
+
+      - name: Use Akeyless secret
+        run: |
+          secret_value="${{ steps.fetch-secrets.outputs.my_first_secret }}"
+    
+          if [ "$secret_value" == "secret_value" ]; then
+          echo "Secret value is 'secret_value'"
+          else
+          echo "Secret value is not 'secret_value'"
+          exit 1  # Terminate the workflow with a non-zero status code
+          fi
