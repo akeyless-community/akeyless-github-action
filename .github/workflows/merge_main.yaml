@@ -27,10 +27,6 @@ jobs:
           git push origin $version
           echo "version=${version}" >> "$GITHUB_ENV"
 
-      - name: Debug Info
-        run: |
-          echo "version: ${{ env.version }}"
-
       - name: Create Release
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: create_release
