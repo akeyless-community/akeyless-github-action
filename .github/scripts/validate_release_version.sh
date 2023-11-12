@@ -10,7 +10,4 @@ version=$(cat "${GITHUB_WORKSPACE}/version" | sed -n '/v[0-9]\{1,\}.[0-9]\{1,\}.
 validate_semver "$version"
 tag_exists "$version"
 
-echo "version=${version}" >> "$GITHUB_ENV"
-echo "version=${version}" >> "$GITHUB_OUTPUT"
-
 echo "Version validation succeeded"
