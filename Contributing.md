@@ -7,24 +7,24 @@ We warmly welcome contributions to the Akeyless GitHub Actions Plugin! Whether i
 ### 1. Fork and Clone the Repository
 Fork this repository on GitHub and clone your fork locally.
 
-\`\`\`bash
+```
 git clone [your-fork-url]
 cd [repository-name]
-\`\`\`
+```
 
 ### 2. Install Dependencies
 Before you start, install the necessary dependencies:
 
-\`\`\`bash
+```
 npm install
-\`\`\`
+```
 
 ### 3. Create a New Branch
 Create a branch for your work to keep it separate from the main codebase.
 
-\`\`\`bash
+```
 git checkout -b my-feature-branch
-\`\`\`
+```
 
 ## Making Changes
 
@@ -40,32 +40,32 @@ Ensure you're familiar with the inputs, outputs, and the setup requirements for 
 Add or update tests to cover your changes.
 Ensure all tests pass before submitting your code.
 
-\`\`\`bash
+```
 npm run test
-\`\`\`
+```
 
 ### 4. Formatting Code
 Ensure your code adheres to the project's formatting standards.
 
-\`\`\`bash
+```
 npm run format
-\`\`\`
+```
 
 ### 5. Build the Project
-Update \`dist/index.js\` using the build command to ensure the project is properly compiled.
+Update `dist/index.js` using the build command to ensure the project is properly compiled.
 
-\`\`\`bash
+```
 npm run build
-\`\`\`
+```
 
 ## Submitting Your Changes
 
 ### 1. Push Your Changes
 Push your changes to your fork on GitHub.
 
-\`\`\`bash
+```
 git push origin my-feature-branch
-\`\`\`
+```
 
 ### 2. Create a Pull Request
 Open a pull request from your feature branch to the main repository. Describe your changes and their impact.
