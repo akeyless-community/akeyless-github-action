@@ -44,18 +44,11 @@ Ensure all tests pass before submitting your code.
 npm run test
 ```
 
-### 4. Formatting Code
-Ensure your code adheres to the project's formatting standards.
-
-```
-npm run format
-```
-
-### 5. Build the Project
+### 4. Build the Project
 Update `dist/index.js` using the build command to ensure the project is properly compiled.
 
 ```
-npm run build
+npm run package
 ```
 
 ## Submitting Your Changes
