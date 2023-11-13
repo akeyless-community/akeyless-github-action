@@ -37,8 +37,8 @@ Ensure you're familiar with the inputs, outputs, and the setup requirements for 
 - Add comments where necessary.
 
 ### 3. Testing Your Changes
-- Add or update tests to cover your changes.
-- Ensure all tests pass before submitting your code.
+Add or update tests to cover your changes.
+Ensure all tests pass before submitting your code.
 
 \`\`\`bash
 npm run test
@@ -74,7 +74,6 @@ Open a pull request from your feature branch to the main repository. Describe yo
 Your pull request will be reviewed by the Akeyless team. Engage in discussions and make any necessary updates based on feedback.
 
 ## Increase the Chance of Acceptance
-
 - Ensure you write tests for your code.
 - Keep your changes as focused as possible. Submit unrelated changes as separate pull requests.
 - Adhere to the coding and documentation style of the project.
