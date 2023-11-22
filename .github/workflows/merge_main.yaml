@@ -1,0 +1,41 @@
+name: Git Release Creator
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  git-release-creation:
+    name: akeyless-github-action-git-release-creation
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out akeyless-github-action code
+        uses: actions/checkout@v3
+
+      - name: Fetch history
+        run: git fetch --prune --unshallow
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Create Tag
+        run: |
+          version=$(cat "${GITHUB_WORKSPACE}/version" | sed -n '/v[0-9]\{1,\}.[0-9]\{1,\}.[0-9]\{1,\}/p')
+          git tag -a $version -m "tagged $version"
+          git push origin $version
+          echo "version=${version}" >> "$GITHUB_ENV"
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: $version
+          name: Release-${{ env.version }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
