@@ -8,7 +8,7 @@ We warmly welcome contributions to the Akeyless GitHub Actions Plugin! Whether i
 Fork this repository on GitHub and clone your fork locally.
 
 ```
-git clone [your-fork-url]
+git clone https://github.com/akeyless-community/akeyless-github-action.git
 cd [repository-name]
 ```
 
