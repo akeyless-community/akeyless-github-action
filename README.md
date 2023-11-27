@@ -55,7 +55,6 @@ This guide describes how to use our various Authentication Methods to fetch [Sta
 | **gcp-audience**                  | No       | `string`  | GCP audience to use in signed JWT (relevant only for access-type=`gcp`).                                                     |
 | **gateway-url**                   | No       | `string`  | Gateway URL for the K8s authenticated (relevant only for access-type=`k8s`/`oauth2`).                                          |
 | **k8s-auth-config-name**          | No       | `string`  | The K8s Auth config name (relevant only for access-type=`k8s`).                                                              |
-| **k8s-service-account-token**     | No       | `string`  | The K8s service account token (relevant only for access-type=`k8s`).                                                         |
 | **uid_token**                     | No       | `string`  | The Universal Identity token (relevant only for access-type=universal_identity).                                           |
 
 ### Outputs
