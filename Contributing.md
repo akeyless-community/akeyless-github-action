@@ -9,7 +9,7 @@ Fork this repository on GitHub and clone your fork locally.
 
 ```
 git clone https://github.com/akeyless-community/akeyless-github-action.git
-cd [repository-name]
+cd akeyless-github-action
 ```
 
 ### 2. Install Dependencies
