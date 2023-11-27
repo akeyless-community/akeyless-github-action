@@ -1,5 +1,8 @@
 name: 'Akeyless Authentication and fetching secrets'
 description: 'Akeyless Authentication and fetching secrets'
+branding:
+  icon: 'lock'
+  color: 'blue'
 inputs:
   # Authentication input
   access-id:
