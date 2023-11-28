@@ -115,7 +115,7 @@ jobs:
 
     steps:
       - name: Fetch static secrets from Akeyless
-        uses: akeyless-github-action
+        uses: akeyless-community/akeyless-github-action@v1.0.0
         id: fetch-secrets
         with:
           access-id: ${{ vars.AKEYLESS_ACCESS_ID }}
@@ -153,7 +153,7 @@ This example demonstrates fetching an AWS Dynamic Secret from Akeyless.
     steps:
     - name: Fetch dynamic secrets from Akeyless
       id: fetch-dynamic-secrets
-      uses: akeyless-github-action
+      uses: akeyless-community/akeyless-github-action@v1.0.0
       with:
         access-id: ${{vars.AKEYLESS_ACCESS_ID}}
         dynamic-secrets: |
@@ -194,7 +194,7 @@ This example demonstrates fetching an AWS Rotated Secret from Akeyless.
     steps:
     - name: Fetch rotated secrets from Akeyless
       id: fetch-rotated-secrets
-      uses: akeyless-github-action
+      uses: akeyless-community/akeyless-github-action@v1.0.0
       with:
         access-id: ${{ vars.AKEYLESS_ACCESS_ID }}
         access-type: jwt
@@ -217,7 +217,7 @@ This example demonstrates fetching an AWS Rotated Secret from Akeyless.
     steps:
       - name: Fetch ssh certificates from Akeyless
         id: fetch-ssh-certificate
-        uses: akeyless-github-action
+        uses: akeyless-community/akeyless-github-action@v1.0.0
         with:
           access-type: jwt
           ssh-certificate-secrets: |
@@ -245,7 +245,7 @@ This example demonstrates fetching an AWS Rotated Secret from Akeyless.
     steps:
       - name: Fetch pki certificates from Akeyless
         id: fetch-pki-certificates
-        uses: akeyless-github-action
+        uses: akeyless-community/akeyless-github-action@v1.0.0
         with:
           access-type: jwt
           pki-certificate-secrets: |
