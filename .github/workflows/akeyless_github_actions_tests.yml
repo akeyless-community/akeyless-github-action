@@ -1,0 +1,96 @@
+name: Akeyless Github Action Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # You can trigger the workflow manually
+
+jobs:
+  fetch_secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Akeyless Authentication and fetch secret
+        uses: ./
+        id: fetch-secrets
+        with:
+          access-id: ${{ vars.AKEYLESS_ACCESS_ID }}
+          access-type: jwt
+          static-secrets: |
+            - name: "/akeyless-github-action/github-static-secret-json"
+              output-name: "my_first_secret"
+              key: "imp"
+
+      - name: Akeyless Authentication with existing token and fetch secret
+        uses: ./
+        id: fetch-secrets-with-token
+        with:
+          token: ${{ steps.fetch-secrets.outputs.token }}
+          static-secrets: |
+            - name: "/akeyless-github-action/github-static-secret"
+              output-name: "my_second_secret"
+
+      - name: Akeyless get secret with parse-json-secrets without prefix
+        uses: ./
+        id: parse-json-secrets
+        with:
+          token: ${{ steps.fetch-secrets.outputs.token }}
+          static-secrets: |
+            - name: "/akeyless-github-action/github-static-secret-json"
+          parse-json-secrets: true
+
+      - name: Akeyless get secret with parse-json-secrets with prefix
+        uses: ./
+        id: parse-json-secrets-with-prefix
+        with:
+          token: ${{ steps.fetch-secrets.outputs.token }}
+          static-secrets: |
+            - name: "/akeyless-github-action/github-static-secret-json"
+              prefix-json-secrets: "PREFIX"
+            - name: "/akeyless-github-action/github-static-secret-json"
+              output-name: "only_one_key"
+              key: "imp"
+          parse-json-secrets: true
+
+      - name: Use Akeyless secret
+        run: |
+          secret_value="${{ steps.fetch-secrets.outputs.my_first_secret }}"
+          if [ "$secret_value" != "secret_json_key_value" ]; then
+          echo "Secret value is not 'secret_json_key_value'"
+          exit 1  # Terminate the workflow with a non-zero status code
+          fi
+          second_secret_value="${{ steps.fetch-secrets-with-token.outputs.my_second_secret }}"
+          if [ "$second_secret_value" != "secret_value" ]; then
+          echo "Secret value is not 'secret_value'"
+          exit 1  # Terminate the workflow with a non-zero status code
+          else
+          echo "Secret value is 'secret_value'"
+          fi
+          third_secret_value1="${{ steps.parse-json-secrets.outputs.AKEYLESS-GITHUB-ACTION_GITHUB-STATIC-SECRET-JSON_IMP }}"
+          third_secret_value2="${{ steps.parse-json-secrets.outputs.AKEYLESS-GITHUB-ACTION_GITHUB-STATIC-SECRET-JSON_KEY }}"
+          if [ "$third_secret_value1" != "secret_json_key_value" || "$third_secret_value2" != "val" ]; then
+          echo "failed to get third secret"
+          exit 1
+          else
+          echo "succeed getting secret value by extracting the json fields"
+          fi
+          fourth_secret_value1="${{ steps.parse-json-secrets-with-prefix.outputs.AKEYLESS-GITHUB-ACTION_GITHUB-STATIC-SECRET-PREFIX_JSON_IMP }}"
+          fourth_secret_value2="${{ steps.parse-json-secrets-with-prefix.outputs.AKEYLESS-GITHUB-ACTION_GITHUB-STATIC-SECRET-PREFIX_JSON_KEY }}"
+          fourth_secret_value3="${{ steps.parse-json-secrets-with-prefix.outputs.only_one_key }}"
+          if [ "$fourth_secret_value1" != "secret_json_key_value" || "fourth_secret_value2" != "val" || fourth_secret_value3]; then
+          echo "failed to get third secret"
+          exit 1
+          else
+          echo "succeed getting secret value by extracting the json fields"
+          fi

@@ -19,7 +19,7 @@ describe('testing input', () => {
             'token': '',
             'export-secrets-to-outputs': true,
             'export-secrets-to-environment': true,
-            'generate-separate-output': false,
+            'parse-json-secrets': true
         };
         mockCoreInput(inputToOutputMap);
     });
@@ -39,6 +39,7 @@ describe('testing input', () => {
             token: '',
             exportSecretsToOutputs: true,
             exportSecretsToEnvironment: true,
+            parseJsonSecrets: true
         });
     });
 
@@ -71,11 +72,11 @@ describe('testing input', () => {
     });
 
     const inputTypes = [
-        { type: 'static-secrets', requiredFields: ['name', 'output-name'] },
-        { type: 'dynamic-secrets', requiredFields: ['name', 'output-name'] },
-        { type: 'rotated-secrets', requiredFields: ['name', 'output-name'] },
-        { type: 'ssh-certificates', requiredFields: ['name', 'cert-username', 'public-key-data', 'output-name'] },
-        { type: 'pki-certificates', requiredFields: ['name', 'csr-data-base64', 'output-name'] },
+        { type: 'static-secrets', requiredFields: ['name'] },
+        { type: 'dynamic-secrets', requiredFields: ['name'] },
+        { type: 'rotated-secrets', requiredFields: ['name'] },
+        { type: 'ssh-certificates', requiredFields: ['name', 'cert-username', 'public-key-data'] },
+        { type: 'pki-certificates', requiredFields: ['name', 'csr-data-base64'] },
     ];
 
     inputTypes.forEach(({ type, requiredFields }) => {

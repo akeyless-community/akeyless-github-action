@@ -7,21 +7,6 @@ akeyless = require('akeyless');
 secrets = require('../src/secrets');
 
 describe('testing secret exports', () => {
-  beforeEach(() => {
-    const args = {
-      akeylessToken: "akeylessToken",
-      staticSecrets: [{"name": "/some/static/secret", "output-name": "my_first_secret"}, {"name": "/some2/static2/secret2", "output-name":"my_second_secret"}],
-      dynamicSecrets: {"/some/dynamic/secret":"my_first_secret"},
-      rotatedSecrets: {"/some/rotated/secret":"my_first_secret"},
-      apiUrl: 'https://api.akeyless.io',
-      exportSecretsToOutputs: true,
-      exportSecretsToEnvironment: true,
-      parseDynamicSecrets: false,
-      sshCertificate: [{ "name": "sshCert", "cert-username": "ubuntu", "public-key-data": "ssh-rsa AAAAB", "output-name": "my_first_secret"}],
-      pkiCertificate: [{ "name": "pkiCert", "csr-data-base64": "LS0tL", "output-name": "my_first_secret"}]
-    }
-  })
-
   it('should export static secret', async function () {
     const args = {
       akeylessToken: "akeylessToken",
@@ -70,6 +55,68 @@ describe('testing secret exports', () => {
     expect(core.setOutput).toHaveBeenCalledWith("my_second_secret", 'secret-value-2');
     expect(core.exportVariable).toHaveBeenCalledWith('my_first_secret', 'secret-value-1');
     expect(core.exportVariable).toHaveBeenCalledWith('my_second_secret', 'secret-value-2');
+  });
+
+  it('should export static secret with parse-json-secrets', async function () {
+    const  staticSecrets = [{"name": "/some/static/secret", "output-name": "my_first_secret"},
+      {"name": "/some2/static2/secret2", "prefix-json-secrets": "Mysql"}, {"name": "/some3/static3/secret3"},
+      {"name": "/some4/static4/secret4", "output-name":"secret_out_of_key_in_json", "key": "secretName6"}]
+    const args = {
+      akeylessToken: "akeylessToken",
+      staticSecrets: staticSecrets,
+      apiUrl: 'https://api.akeyless.io',
+      exportSecretsToOutputs: true,
+      exportSecretsToEnvironment: true,
+      parseDynamicSecrets: false,
+      parseJsonSecrets: true
+    }
+    const api = {
+      getSecretValue: jest.fn(),
+    };
+    akeylessApi.api.mockReturnValue(api);
+    api.getSecretValue.mockResolvedValueOnce({
+      "/some/static/secret": 'secret-value-1',
+    });
+    api.getSecretValue.mockResolvedValueOnce({
+      "/some2/static2/secret2": '{"secretName":"secret-value-2", "secretName2":"secret-value-3"}',
+    });
+
+    api.getSecretValue.mockResolvedValueOnce({
+      "/some3/static3/secret3": '{"secretName4":"secret-value-4", "secretName5":"secret-value-5"}',
+    });
+    api.getSecretValue.mockResolvedValueOnce({
+      "/some4/static4/secret4": '{"secretName6":"secret-value-6", "secretName7":"noParsed"}',
+    });
+    core.setSecret = jest.fn();
+    core.setOutput = jest.fn();
+    core.exportVariable = jest.fn();
+
+    await secrets.handleExportSecrets(args)
+
+    expect(akeylessApi.api).toHaveBeenCalledWith(args.apiUrl);
+
+    // Check if getSecretValue is called with the correct parameters
+    expect(api.getSecretValue).toHaveBeenCalledTimes(4);
+    expect(api.getSecretValue).toHaveBeenCalledWith({
+      token: args.akeylessToken,
+      names: ["/some/static/secret"],
+    });
+    expect(api.getSecretValue).toHaveBeenCalledWith({
+      token: args.akeylessToken,
+      names: ["/some2/static2/secret2"],
+    });
+
+    // Check if core functions are called with the correct values
+    expect(core.setSecret).toHaveBeenCalledTimes(7);
+    expect(core.setOutput).toHaveBeenCalledWith('my_first_secret', 'secret-value-1');
+    expect(core.setOutput).toHaveBeenCalledWith("Mysql_SECRETNAME", 'secret-value-2');
+    expect(core.setOutput).toHaveBeenCalledWith("Mysql_SECRETNAME2", 'secret-value-3');
+    expect(core.setOutput).toHaveBeenCalledWith("SOME3_STATIC3_SECRET3_SECRETNAME4", 'secret-value-4');
+    expect(core.setOutput).toHaveBeenCalledWith("SOME3_STATIC3_SECRET3_SECRETNAME5", 'secret-value-5');
+    expect(core.setOutput).toHaveBeenCalledWith("secret_out_of_key_in_json", 'secret-value-6');
+    expect(core.exportVariable).toHaveBeenCalledWith('my_first_secret', 'secret-value-1');
+    expect(core.exportVariable).toHaveBeenCalledWith("Mysql_SECRETNAME", 'secret-value-2');
+    expect(core.exportVariable).toHaveBeenCalledWith("Mysql_SECRETNAME2", 'secret-value-3');
   });
 
   it('should export dynamic secret', async function () {
@@ -247,17 +294,17 @@ describe('testing secret exports', () => {
       parseDynamicSecrets: false,
       sshCertificate: undefined,
       pkiCertificate: [
-      {
-        "name": "pkiCert",
-        "csr-data-base64": "csr data",
-        "output-name": "my_first_secret"
-      },
-      {
-        "name": "pkiCert2",
-        "csr-data-base64": "csr data2",
-        "output-name": "my_second_secret"
-      }
-    ],
+        {
+          "name": "pkiCert",
+          "csr-data-base64": "csr data",
+          "output-name": "my_first_secret"
+        },
+        {
+          "name": "pkiCert2",
+          "csr-data-base64": "csr data2",
+          "output-name": "my_second_secret"
+        }
+      ],
     }
     const api = {
       getPKICertificate: jest.fn(),

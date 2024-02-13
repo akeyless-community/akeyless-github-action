@@ -60,6 +60,10 @@ inputs:
     description: 'True/False to denote if static/dynamic secrets should be exported as environment variables.'
     required: false
     default: true
+  parse-json-secrets:
+    required: false
+    default: false
+    description: 'True/False to denote if create environment variables from json secret for each key/value pair in the JSON.'
 
 outputs:
   token:

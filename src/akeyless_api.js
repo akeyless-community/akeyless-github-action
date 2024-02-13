@@ -4,12 +4,17 @@ const core = require("@actions/core");
 
 function api(url) {
     const client = new akeyless.ApiClient();
+
     const caCertificate = core.getInput('ca-certificate')
     if (caCertificate && caCertificate != "") {
         const agent = new https.Agent({
             ca: caCertificate
         })
         client.requestAgent = agent
+    }
+
+    client.defaultHeaders = {
+        'akeylessclienttype': 'github_action'
     }
     client.basePath = url;
     return new akeyless.V2Api(client);

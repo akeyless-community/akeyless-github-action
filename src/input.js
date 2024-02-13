@@ -7,14 +7,15 @@ const fetchAndValidateInput = () => {
         accessId: core.getInput('access-id'),
         accessType: core.getInput('access-type'),
         apiUrl: core.getInput('api-url'),
-        staticSecrets: parseAndValidateSecrets('static-secrets', ['name', 'output-name'], ['key']),
-        dynamicSecrets: parseAndValidateSecrets('dynamic-secrets', ['name', 'output-name'], ['key']),
-        rotatedSecrets: parseAndValidateSecrets('rotated-secrets', ['name', 'output-name'], ['key']),
-        sshCertificate: parseAndValidateSecrets('ssh-certificates', ['name', 'cert-username', 'public-key-data', 'output-name'], ['key']),
-        pkiCertificate: parseAndValidateSecrets('pki-certificates', ['name', 'csr-data-base64', 'output-name'], ['key']),
+        staticSecrets: parseAndValidateSecrets('static-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
+        dynamicSecrets: parseAndValidateSecrets('dynamic-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
+        rotatedSecrets: parseAndValidateSecrets('rotated-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
+        sshCertificate: parseAndValidateSecrets('ssh-certificates', ['name', 'cert-username', 'public-key-data'], ['output-name', 'key', 'prefix-json-secrets']),
+        pkiCertificate: parseAndValidateSecrets('pki-certificates', ['name', 'csr-data-base64'], ['output-name', 'key', 'prefix-json-secrets']),
         token: core.getInput('token'),
         exportSecretsToOutputs: core.getBooleanInput('export-secrets-to-outputs', {default: true}),
-        exportSecretsToEnvironment: core.getBooleanInput('export-secrets-to-environment', {default: true})
+        exportSecretsToEnvironment: core.getBooleanInput('export-secrets-to-environment', {default: true}),
+        parseJsonSecrets: core.getBooleanInput('parse-json-secrets', {default: false})
     };
     if (params['token'] == "") {
         validateRequiredParamsWhenTokenNotExist(params['accessId'], params['accessType'])

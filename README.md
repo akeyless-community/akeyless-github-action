@@ -14,6 +14,7 @@
             - [Rotated Secrets Demo](#rotated-secrets-demo)
             - [SSH Certificates Demo](#ssh-certificates-demo)
             - [PKI Certificates Demo](#pki-certificates-demo)
+            - [Parse JSON secrets](#parse-json-secrets)
         - [Akeyless Setup](#akeyless-setup)
             - [Authentication Methods](#authentication-methods)
                 - [JWT Auth Method](#jwt-auth-method)
@@ -255,6 +256,53 @@ This example demonstrates fetching an AWS Rotated Secret from Akeyless.
             - name: "/path/to/pki/secret2"
               output-name: "pki_secret2"
               csr-data-base64: "csr_data_base64"
+```
+
+### Parse JSON secrets
+
+By default, the action sets the environment variable value to the entire JSON string in the secret value. Set `parse-json-secrets` to `true` to create environment variables for each key/value pair in the secret JSON.
+
+If the JSON uses case-sensitive keys such as "name" and "Name", the action will have duplicate name conflicts. In this case, set parse-json-secrets to false and parse the JSON secret value separately.
+You can still use the `key` and `output-name` for extracting specific key with a specific name.
+
+for example, for secret with json value:
+```json
+    {
+      "key1":"val1", 
+      "key2":"val2"
+    }
+```
+
+```yaml
+       with:
+          access-id: ${{ vars.AKEYLESS_ACCESS_ID }}
+          access-type: jwt
+          static-secrets: |
+           - name: "/path/to-secret"
+           - name: "/path/to-secret"
+             key: "key1"
+             output-name: "SECRET"
+          parse-json-secrets: true
+     - name: Use Akeyless secret
+       run: |
+         echo "val1 == ${{ env.PATH_TO-SECRET_KEY1 }}" >> secrets.txt
+         echo "val2 == ${{ env.PATH_TO-SECRET_KEY2 }}" >> secrets.txt
+         echo "val1 == ${{ env.SECRET }}" >> secrets.txt
+```
+
+If you don't want the prefix to be the secret name you can add `prefix-json-secrets` with the prefix you would like:
+```yaml
+       with:
+          access-id: ${{ vars.AKEYLESS_ACCESS_ID }}
+          access-type: jwt
+          static-secrets: |
+           - name: "/path/to-secret"
+             prefix-json-secrets: "Mysql"
+          parse-json-secrets: true
+     - name: Use Akeyless secret
+       run: |
+         echo "val1 == ${{ env.MYSQL_KEY1 }}" >> secrets.txt
+         echo "val2 == ${{ env.MYSQL_KEY2 }}" >> secrets.txt
 ```
 
 ## Akeyless Setup
