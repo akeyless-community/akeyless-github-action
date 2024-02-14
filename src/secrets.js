@@ -151,7 +151,7 @@ function setOutput(secretValue, params, exportSecretsToOutputs, exportSecretsToE
     if (parseJsonSecrets == true && !params.hasOwnProperty('key')) {
         const parsedJson = parseJson(secretValue)
         if (parsedJson != null) {
-            checkDuplicateKeys(parsedJson)
+            validateNoDuplicateKeys(parsedJson)
             exportJsonFields(parsedJson, params['name'], params['prefix-json-secrets'], exportSecretsToOutputs, exportSecretsToEnvironment)
         } else {
             exportSecretToOutput(params['output-name'], secretValue, exportSecretsToOutputs, exportSecretsToEnvironment)
@@ -163,12 +163,13 @@ function setOutput(secretValue, params, exportSecretsToOutputs, exportSecretsToE
     exportSecretToOutput(params['output-name'], secretValueOut, exportSecretsToOutputs, exportSecretsToEnvironment)
 }
 
-function convertPathNameToPrefix(path) {
-    // remove the first /
-    const pathWithoutFirstChar = path.slice(1)
+function convertPathNameToPrefix(pathName) {
+    if (pathName[0] === '/') {
+        pathName = pathName.slice(1)
+    }
 
     // Join the parts back with '_' in between
-    return pathWithoutFirstChar.replace(/\//g, "_").toUpperCase()
+    return pathName.replace(/\//g, "_").toUpperCase()
 }
 
 function processSecretValue(secret, key) {
@@ -201,7 +202,7 @@ function exportSecretToOutput(variableName, secretValue, exportSecretsToOutputs,
 }
 
 function exportJsonFields(parsedJson, secretName, prefix, exportSecretsToOutputs, exportSecretsToEnvironment) {
-    if (prefix === undefined) {
+    if (!prefix) {
         prefix = convertPathNameToPrefix(secretName)
     }
     let outputName;
@@ -211,7 +212,7 @@ function exportJsonFields(parsedJson, secretName, prefix, exportSecretsToOutputs
     }
 }
 
-function checkDuplicateKeys(parsedJson) {
+function validateNoDuplicateKeys(parsedJson) {
     const keyMap = new Map();
 
     for (const [key, value] of Object.entries(parsedJson)) {

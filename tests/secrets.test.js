@@ -59,7 +59,7 @@ describe('testing secret exports', () => {
 
   it('should export static secret with parse-json-secrets', async function () {
     const  staticSecrets = [{"name": "/some/static/secret", "output-name": "my_first_secret"},
-      {"name": "/some2/static2/secret2", "prefix-json-secrets": "Mysql"}, {"name": "/some3/static3/secret3"},
+      {"name": "some2/static2/secret2", "prefix-json-secrets": "Mysql"}, {"name": "/some3/static3/secret3"},
       {"name": "/some4/static4/secret4", "output-name":"secret_out_of_key_in_json", "key": "secretName6"}]
     const args = {
       akeylessToken: "akeylessToken",
@@ -78,7 +78,7 @@ describe('testing secret exports', () => {
       "/some/static/secret": 'secret-value-1',
     });
     api.getSecretValue.mockResolvedValueOnce({
-      "/some2/static2/secret2": '{"secretName":"secret-value-2", "secretName2":"secret-value-3"}',
+      "some2/static2/secret2": '{"secretName":"secret-value-2", "secretName2":"secret-value-3"}',
     });
 
     api.getSecretValue.mockResolvedValueOnce({
@@ -103,7 +103,7 @@ describe('testing secret exports', () => {
     });
     expect(api.getSecretValue).toHaveBeenCalledWith({
       token: args.akeylessToken,
-      names: ["/some2/static2/secret2"],
+      names: ["some2/static2/secret2"],
     });
 
     // Check if core functions are called with the correct values
