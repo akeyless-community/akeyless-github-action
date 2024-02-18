@@ -88,7 +88,7 @@ jobs:
           fourth_secret_value1="${{ steps.parse-json-secrets-with-prefix.outputs.PREFIX_JSON_IMP }}"
           fourth_secret_value2="${{ steps.parse-json-secrets-with-prefix.outputs.PREFIX_JSON_KEY }}"
           fourth_secret_value3="${{ steps.parse-json-secrets-with-prefix.outputs.only_one_key }}"
-          if [ "$fourth_secret_value1" != "secret_json_key_value" ] || [ "fourth_secret_value2" != "val" ] || [ fourth_secret_value3 != "secret_json_key_value" ]; then
+          if [ "$fourth_secret_value1" != "secret_json_key_value" ] || [ "$fourth_secret_value2" != "val" ] || [ "$fourth_secret_value3" != "secret_json_key_value" ]; then
           echo "failed to get fourth secret"
           exit 1
           else
