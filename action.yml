@@ -63,7 +63,7 @@ inputs:
   parse-json-secrets:
     required: false
     default: false
-    description: 'True/False to denote if create environment variables from json secret for each key/value pair in the JSON.'
+    description: 'True/False to denote if environment variables should be created for each key/value pair in the JSON of the secret.'
 
 outputs:
   token:

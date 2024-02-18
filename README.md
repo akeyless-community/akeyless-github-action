@@ -262,10 +262,11 @@ This example demonstrates fetching an AWS Rotated Secret from Akeyless.
 
 By default, the action sets the environment variable value to the entire JSON string in the secret value. Set `parse-json-secrets` to `true` to create environment variables for each key/value pair in the secret JSON.
 
-If the JSON uses case-sensitive keys such as "name" and "Name", the action will have duplicate name conflicts. In this case, set parse-json-secrets to false and parse the JSON secret value separately.
-You can still use the `key` and `output-name` for extracting specific key with a specific name.
+- If the JSON uses case-sensitive keys such as "name" and "Name", the action will have duplicate name conflicts. In this case, set `parse-json-secrets` to false and parse the JSON secret value separately.
+- You can still use the `key` and `output-name` for extracting a specific key with a specific name.
+- The default env name will be the path to the secret. If your secret name is `/dev/test`, the default name will be `env.DEV_TEST_{key}`.
 
-for example, for secret with json value:
+For example, for a secret with JSON values:
 ```json
     {
       "key1":"val1", 
@@ -285,9 +286,9 @@ for example, for secret with json value:
           parse-json-secrets: true
      - name: Use Akeyless secret
        run: |
-         echo "val1 == ${{ env.PATH_TO-SECRET_KEY1 }}" >> secrets.txt
-         echo "val2 == ${{ env.PATH_TO-SECRET_KEY2 }}" >> secrets.txt
-         echo "val1 == ${{ env.SECRET }}" >> secrets.txt
+         echo "key1: ${{ env.PATH_TO-SECRET_KEY1 }} >> secrets.txt
+         echo "key2: ${{ env.PATH_TO-SECRET_KEY2 }}" >> secrets.txt
+         echo "key1: ${{ env.SECRET }}" >> secrets.txt
 ```
 
 If you don't want the prefix to be the secret name you can add `prefix-json-secrets` with the prefix you would like:
