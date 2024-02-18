@@ -79,16 +79,16 @@ jobs:
           fi
           third_secret_value1="${{ steps.parse-json-secrets.outputs.AKEYLESS-GITHUB-ACTION_GITHUB-STATIC-SECRET-JSON_IMP }}"
           third_secret_value2="${{ steps.parse-json-secrets.outputs.AKEYLESS-GITHUB-ACTION_GITHUB-STATIC-SECRET-JSON_KEY }}"
-          if [ "$third_secret_value1" != "secret_json_key_value" || "$third_secret_value2" != "val" ]; then
+          if [ "$third_secret_value1" != "secret_json_key_value" ] || [ "$third_secret_value2" != "val" ]; then
           echo "failed to get third secret"
           exit 1
           else
           echo "succeed getting secret value by extracting the json fields"
           fi
-          fourth_secret_value1="${{ steps.parse-json-secrets-with-prefix.outputs.AKEYLESS-GITHUB-ACTION_GITHUB-STATIC-SECRET-PREFIX_JSON_IMP }}"
-          fourth_secret_value2="${{ steps.parse-json-secrets-with-prefix.outputs.AKEYLESS-GITHUB-ACTION_GITHUB-STATIC-SECRET-PREFIX_JSON_KEY }}"
+          fourth_secret_value1="${{ steps.parse-json-secrets-with-prefix.outputs.PREFIX_JSON_IMP }}"
+          fourth_secret_value2="${{ steps.parse-json-secrets-with-prefix.outputs.PREFIX_JSON_KEY }}"
           fourth_secret_value3="${{ steps.parse-json-secrets-with-prefix.outputs.only_one_key }}"
-          if [ "$fourth_secret_value1" != "secret_json_key_value" || "fourth_secret_value2" != "val" || fourth_secret_value3]; then
+          if [ "$fourth_secret_value1" != "secret_json_key_value"] || [ "fourth_secret_value2" != "val" ] || [fourth_secret_value3 != "secret_json_key_value"]; then
           echo "failed to get third secret"
           exit 1
           else
