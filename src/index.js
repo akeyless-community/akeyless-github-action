@@ -16,7 +16,8 @@ async function run() {
         pkiCertificate,
         token,
         exportSecretsToOutputs,
-        exportSecretsToEnvironment} =
+        exportSecretsToEnvironment,
+        parseJsonSecrets} =
         input.fetchAndValidateInput();
 
     core.debug(`access id: ${accessId}`);
@@ -47,7 +48,8 @@ async function run() {
         exportSecretsToOutputs,
         exportSecretsToEnvironment,
         sshCertificate,
-        pkiCertificate
+        pkiCertificate,
+        parseJsonSecrets
     }
     await handleExportSecrets(args)
 
