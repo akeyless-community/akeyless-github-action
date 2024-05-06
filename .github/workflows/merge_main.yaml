@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out akeyless-github-action code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fetch history
         run: git fetch --prune --unshallow
@@ -30,7 +30,7 @@ jobs:
       - name: Create Release
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.version }}
           name: ${{ env.version }}
