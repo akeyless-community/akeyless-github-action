@@ -1,5 +1,6 @@
 name: 'Akeyless Authentication and fetching secrets'
 description: 'Akeyless Authentication and fetching secrets'
+icon: '.github/logo.svg'
 branding:
   icon: 'lock'
   color: 'blue'
