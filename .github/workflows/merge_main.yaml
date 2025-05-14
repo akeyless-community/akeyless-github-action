@@ -1,5 +1,6 @@
 name: Git Release Creator
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -30,7 +31,7 @@ jobs:
       - name: Create Release
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: create_release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631
         with:
           tag_name: ${{ env.version }}
           name: ${{ env.version }}
