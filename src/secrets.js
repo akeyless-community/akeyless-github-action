@@ -111,7 +111,15 @@ async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, expor
             if (!rotatedSecret) {
                 return
             }
-            setOutput(rotatedSecret.value, rotateParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
+
+            // FIX: Use the specific secret value (string), not the whole map
+            const rotatedValue = rotatedSecret.value && rotatedSecret.value[secretName];
+            if (rotatedValue === undefined) {
+                core.debug(`Rotated secret response missing expected key ${secretName}: ${JSON.stringify(rotatedSecret)}`);
+                core.setFailed('Failed to export rotated secret');
+                return;
+            }
+            setOutput(rotatedValue, rotateParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
         }
     } catch (error) {
         core.debug(`Failed to export rotated secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
@@ -149,7 +157,8 @@ async function exportPkiCertificateSecrets(akeylessToken, pkiCertificate, apiUrl
 }
 
 function setOutput(secretValue, params, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets) {
-    if (parseJsonSecrets == true && !params.hasOwnProperty('key')) {
+    // Only attempt JSON parsing when the secret is a string
+    if (parseJsonSecrets === true && typeof secretValue === 'string' && !params.hasOwnProperty('key')) {
         const parsedJson = parseJson(secretValue)
         if (parsedJson != null) {
             validateNoDuplicateKeys(parsedJson)
