@@ -340,4 +340,31 @@ describe('testing secret exports', () => {
     expect(core.exportVariable).toHaveBeenCalledWith('my_first_secret', "first pki certificate");
     expect(core.exportVariable).toHaveBeenCalledWith('my_second_secret', "second pki certificate");
   });
+
+  it('should export rotated secret with parse-json-secrets', async function () {
+    const args = {
+      akeylessToken: "akeylessToken",
+      staticSecrets: undefined,
+      dynamicSecrets: undefined,
+      rotatedSecrets: [{"name":"/some/rotated/secret","output-name":"rot_json"}],
+      apiUrl: 'https://api.akeyless.io',
+      exportSecretsToOutputs: true,
+      exportSecretsToEnvironment: true,
+      parseJsonSecrets: true
+    }
+    const api = { getRotatedSecretValue: jest.fn() };
+    akeylessApi.api.mockReturnValue(api);
+    api.getRotatedSecretValue.mockResolvedValueOnce({
+      value: {"/some/rotated/secret": '{"USER":"u1","PASS":"p1"}'}
+    });
+
+    core.setSecret = jest.fn();
+    core.setOutput = jest.fn();
+    core.exportVariable = jest.fn();
+
+    await secrets.handleExportSecrets(args);
+
+    expect(core.setOutput).toHaveBeenCalledWith("SOME_ROTATED_SECRET_USER", "u1");
+    expect(core.setOutput).toHaveBeenCalledWith("SOME_ROTATED_SECRET_PASS", "p1");
+  });
 })
