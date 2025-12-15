@@ -117,7 +117,7 @@ async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, expor
 
             let secretValue = rotatedSecret.value;
             
-            if (typeof secretValue === 'object' && secretValue !== null) {
+            if (parseJsonSecrets && typeof secretValue === 'object' && secretValue !== null) {
                 secretValue = JSON.stringify(secretValue);
             }
             
