@@ -104,18 +104,29 @@ async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, expor
             });
 
             let rotatedSecret = await api.getRotatedSecretValue(param).catch(error => {
-                core.debug(`getRotatedSecret Failed: ${JSON.stringify(error)}`);
-                core.setFailed(`get rotated secret failed`);
+                core.debug(`getRotatedSecretValue Failed for secret '${secretName}': ${JSON.stringify(error)}`);
+                const errorMessage = error?.body?.error || error?.message || JSON.stringify(error);
+                core.setFailed(`Failed to get rotated secret '${secretName}': ${errorMessage}`);
+                throw error;
             });
 
             if (!rotatedSecret) {
-                return
+                core.setFailed(`No response received for rotated secret '${secretName}'`);
+                return;
             }
-            setOutput(rotatedSecret.value, rotateParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
+
+            let secretValue = rotatedSecret.value;
+            
+            if (typeof secretValue === 'object' && secretValue !== null) {
+                secretValue = JSON.stringify(secretValue);
+            }
+            
+            setOutput(secretValue, rotateParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
         }
     } catch (error) {
-        core.debug(`Failed to export rotated secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
-        core.setFailed('Failed to export rotated secret');
+        core.debug(`Failed to export rotated secret '${secretName}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+        const errorMessage = error?.body?.error || error?.message || 'Unknown error';
+        core.setFailed(`Failed to export rotated secret '${secretName}': ${errorMessage}`);
     }
 }
 
@@ -226,12 +237,20 @@ function validateNoDuplicateKeys(parsedJson) {
 }
 
 function parseJson(jsonString) {
-    try {
-        const parsedJson = JSON.parse(jsonString);
-        return parsedJson;
-    } catch (e) {
-        return null;
+    if (typeof jsonString === 'object' && jsonString !== null) {
+        return jsonString;
     }
+    
+    if (typeof jsonString === 'string') {
+        try {
+            const parsedJson = JSON.parse(jsonString);
+            return parsedJson;
+        } catch (e) {
+            return null;
+        }
+    }
+    
+    return null;
 }
 
 async function handleCreateSecrets(args) {
