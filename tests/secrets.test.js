@@ -219,6 +219,156 @@ describe('testing secret exports', () => {
     expect(core.exportVariable).toHaveBeenCalledWith('my_second_secret', {"/some2/rotated2/secret2": 'secret-value-2'});
   });
 
+  it('should export rotated secret with parse-json-secrets=true (fix for object response)', async function () {
+    const args = {
+      akeylessToken: "akeylessToken",
+      staticSecrets: undefined,
+      dynamicSecrets: undefined,
+      rotatedSecrets: [
+        {
+          "name": "/some/rotated/secret",
+          "prefix-json-secrets": "CREDS"
+        }
+      ],
+      apiUrl: 'https://api.akeyless.io',
+      exportSecretsToOutputs: true,
+      exportSecretsToEnvironment: true,
+      parseJsonSecrets: true,
+      sshCertificate: undefined,
+      pkiCertificate: undefined
+    }
+    const api = {
+      getRotatedSecretValue: jest.fn(),
+    };
+    akeylessApi.api.mockReturnValue(api);
+    
+    // Simulate the real API response where value is an object (not a string)
+    api.getRotatedSecretValue.mockResolvedValueOnce({
+      value: {
+        "username": "testuser",
+        "password": "testpass123",
+        "host": "db.example.com"
+      },
+    });
+    
+    core.setSecret = jest.fn();
+    core.setOutput = jest.fn();
+    core.exportVariable = jest.fn();
+
+    await secrets.handleExportSecrets(args)
+
+    expect(akeylessApi.api).toHaveBeenCalledWith(args.apiUrl);
+    expect(api.getRotatedSecretValue).toHaveBeenCalledTimes(1);
+    expect(api.getRotatedSecretValue).toHaveBeenCalledWith({
+      token: args.akeylessToken,
+      names: "/some/rotated/secret",
+    });
+
+    // Verify that individual JSON fields are exported with the prefix
+    expect(core.setSecret).toHaveBeenCalledTimes(4); // 3 fields + token
+    expect(core.setOutput).toHaveBeenCalledWith('CREDS_USERNAME', 'testuser');
+    expect(core.setOutput).toHaveBeenCalledWith('CREDS_PASSWORD', 'testpass123');
+    expect(core.setOutput).toHaveBeenCalledWith('CREDS_HOST', 'db.example.com');
+    expect(core.exportVariable).toHaveBeenCalledWith('CREDS_USERNAME', 'testuser');
+    expect(core.exportVariable).toHaveBeenCalledWith('CREDS_PASSWORD', 'testpass123');
+    expect(core.exportVariable).toHaveBeenCalledWith('CREDS_HOST', 'db.example.com');
+    
+    // Verify that the entire object is NOT exported as "undefined" (old bug)
+    const outputCalls = core.setOutput.mock.calls;
+    const undefinedOutput = outputCalls.find(call => call[0] === undefined);
+    expect(undefinedOutput).toBeUndefined();
+  });
+
+  it('should export rotated secret with parse-json-secrets=true and no prefix', async function () {
+    const args = {
+      akeylessToken: "akeylessToken",
+      staticSecrets: undefined,
+      dynamicSecrets: undefined,
+      rotatedSecrets: [
+        {
+          "name": "/database/credentials"
+        }
+      ],
+      apiUrl: 'https://api.akeyless.io',
+      exportSecretsToOutputs: true,
+      exportSecretsToEnvironment: false,
+      parseJsonSecrets: true,
+      sshCertificate: undefined,
+      pkiCertificate: undefined
+    }
+    const api = {
+      getRotatedSecretValue: jest.fn(),
+    };
+    akeylessApi.api.mockReturnValue(api);
+    
+    // Simulate the real API response where value is an object
+    api.getRotatedSecretValue.mockResolvedValueOnce({
+      value: {
+        "db_user": "admin",
+        "db_password": "secret123"
+      },
+    });
+    
+    core.setSecret = jest.fn();
+    core.setOutput = jest.fn();
+    core.exportVariable = jest.fn();
+
+    await secrets.handleExportSecrets(args)
+
+    expect(api.getRotatedSecretValue).toHaveBeenCalledTimes(1);
+
+    // Verify that individual JSON fields are exported with default prefix (from path)
+    expect(core.setSecret).toHaveBeenCalledTimes(3); // 2 fields + token
+    expect(core.setOutput).toHaveBeenCalledWith('DATABASE_CREDENTIALS_DB_USER', 'admin');
+    expect(core.setOutput).toHaveBeenCalledWith('DATABASE_CREDENTIALS_DB_PASSWORD', 'secret123');
+  });
+
+  it('should export rotated secret with parseJsonSecrets=false (backward compatibility)', async function () {
+    const args = {
+      akeylessToken: "akeylessToken",
+      staticSecrets: undefined,
+      dynamicSecrets: undefined,
+      rotatedSecrets: [{"name":"/some/rotated/secret","output-name":"my_rotated_secret"}],
+      apiUrl: 'https://api.akeyless.io',
+      exportSecretsToOutputs: true,
+      exportSecretsToEnvironment: true,
+      parseJsonSecrets: false,
+      sshCertificate: undefined,
+      pkiCertificate: undefined
+    }
+    const api = {
+      getRotatedSecretValue: jest.fn(),
+    };
+    akeylessApi.api.mockReturnValue(api);
+    
+    // API returns object (real-world scenario)
+    api.getRotatedSecretValue.mockResolvedValueOnce({
+      value: {
+        "username": "testuser",
+        "password": "testpass123"
+      },
+    });
+    
+    core.setSecret = jest.fn();
+    core.setOutput = jest.fn();
+    core.exportVariable = jest.fn();
+
+    await secrets.handleExportSecrets(args)
+
+    expect(api.getRotatedSecretValue).toHaveBeenCalledTimes(1);
+
+    // With parseJsonSecrets=false, the object should be exported as-is (old behavior)
+    expect(core.setSecret).toHaveBeenCalledTimes(2); // 1 secret + token
+    expect(core.setOutput).toHaveBeenCalledWith('my_rotated_secret', {
+      "username": "testuser",
+      "password": "testpass123"
+    });
+    expect(core.exportVariable).toHaveBeenCalledWith('my_rotated_secret', {
+      "username": "testuser",
+      "password": "testpass123"
+    });
+  });
+
   it('should export ssh certificate secret', async function () {
     const args = {
       akeylessToken: "akeylessToken",
