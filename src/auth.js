@@ -7,7 +7,7 @@ const akeylessCloud = require('akeyless-cloud-id')
 
 function handleActionFail(message, debugMessage) {
     core.debug(debugMessage);  // Only visible with ACTIONS_RUNNER_DEBUG=true
-    core.setFailed(message);   // Always visible
+    core.setFailed(message);   // Always visible //
     throw new Error(message);
 }
 
