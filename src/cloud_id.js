@@ -1,7 +1,7 @@
 /**
  * Cloud identity helpers for Akeyless cloud auth (AWS IAM / Azure AD / GCP).
- * AWS uses AWS SDK for JavaScript v3 credential providers + aws4 signing
- * (replacing aws-sdk v2 from akeyless-cloud-id).
+ * AWS uses AWS SDK for JavaScript v3 credential providers + Smithy SigV4
+ * (no aws-sdk v2 / aws4 url.parse).
  *
  * Provider SDKs are required lazily so jwt/access_key auth does not load them.
  */
@@ -75,35 +75,57 @@ async function getAwsCloudId() {
   });
 }
 
-function stsGetCallerIdentity(creds) {
-  const aws4 = require('aws4');
-  const opts = {
-    method: 'POST',
-    service: 'sts',
-    body: 'Action=GetCallerIdentity&Version=2011-06-15',
-    region: 'us-east-1',
-    headers: {},
-  };
-  opts.headers['Content-Length'] = opts.body.length;
-  opts.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
+async function stsGetCallerIdentity(creds) {
+  const { SignatureV4 } = require('@smithy/signature-v4');
+  const { HttpRequest } = require('@smithy/protocol-http');
+  const { Sha256 } = require('@aws-crypto/sha256-js');
 
-  aws4.sign(opts, creds);
+  const body = 'Action=GetCallerIdentity&Version=2011-06-15';
+  const host = 'sts.amazonaws.com';
+  const region = 'us-east-1';
+
+  const signer = new SignatureV4({
+    credentials: {
+      accessKeyId: creds.accessKeyId,
+      secretAccessKey: creds.secretAccessKey,
+      sessionToken: creds.sessionToken,
+    },
+    region,
+    service: 'sts',
+    sha256: Sha256,
+  });
+
+  const request = new HttpRequest({
+    method: 'POST',
+    protocol: 'https:',
+    hostname: host,
+    path: '/',
+    headers: {
+      host,
+      'content-type': 'application/x-www-form-urlencoded; charset=utf-8',
+      'content-length': String(Buffer.byteLength(body)),
+    },
+    body,
+  });
+
+  const signed = await signer.sign(request);
 
   const h = {
-    Authorization: [opts.headers.Authorization],
-    'Content-Length': [opts.body.length.toString()],
-    Host: [opts.headers.Host],
-    'Content-Type': [opts.headers['Content-Type']],
-    'X-Amz-Date': [opts.headers['X-Amz-Date']],
+    Authorization: [signed.headers.authorization || signed.headers.Authorization],
+    'Content-Length': [String(Buffer.byteLength(body))],
+    Host: [host],
+    'Content-Type': ['application/x-www-form-urlencoded; charset=utf-8'],
+    'X-Amz-Date': [signed.headers['x-amz-date'] || signed.headers['X-Amz-Date']],
   };
-  if (creds.sessionToken) {
-    h['X-Amz-Security-Token'] = [creds.sessionToken];
+  const securityToken = signed.headers['x-amz-security-token'] || signed.headers['X-Amz-Security-Token'] || creds.sessionToken;
+  if (securityToken) {
+    h['X-Amz-Security-Token'] = [securityToken];
   }
 
   const obj = {
     sts_request_method: 'POST',
     sts_request_url: Buffer.from('https://sts.amazonaws.com/').toString('base64'),
-    sts_request_body: Buffer.from('Action=GetCallerIdentity&Version=2011-06-15').toString('base64'),
+    sts_request_body: Buffer.from(body).toString('base64'),
     sts_request_headers: Buffer.from(JSON.stringify(h)).toString('base64'),
   };
   return Buffer.from(JSON.stringify(obj)).toString('base64');

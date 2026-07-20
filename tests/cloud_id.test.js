@@ -31,5 +31,6 @@ describe('cloud_id', () => {
     expect(headers.Authorization[0]).toMatch(/^AWS4-HMAC-SHA256/);
     expect(headers['X-Amz-Security-Token']).toEqual(['session']);
     expect(headers.Host[0]).toBe('sts.amazonaws.com');
+    expect(headers['X-Amz-Date'][0]).toMatch(/^\d{8}T\d{6}Z$/);
   });
 });
