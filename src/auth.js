@@ -3,7 +3,7 @@ const akeyless = require('akeyless');
 const akeylessApi = require('./akeyless_api');
 const fs = require('fs');
 const path = require('path');
-const akeylessCloud = require('akeyless-cloud-id')
+const akeylessCloud = require('./cloud_id');
 
 function handleActionFail(message, debugMessage) {
     core.debug(debugMessage);  // Only visible with ACTIONS_RUNNER_DEBUG=true

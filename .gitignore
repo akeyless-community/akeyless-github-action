@@ -1,4 +1,6 @@
 # Ignore node_modules directory
 node_modules/
+# Ignore Jest coverage output
+coverage/
 # Ignore JetBrains IDE files
 .idea/

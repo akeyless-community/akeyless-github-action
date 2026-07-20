@@ -136,11 +136,14 @@ describe('testing secret exports', () => {
       getDynamicSecretValue: jest.fn(),
     };
     akeylessApi.api.mockReturnValue(api);
+    // Real API returns the credential object directly (not keyed by secret path)
     api.getDynamicSecretValue.mockResolvedValueOnce({
-      "/some/dynamic/secret": 'secret-value-1',
+      access_key_id: 'AKIA...',
+      secret_access_key: 'secret-1',
     });
     api.getDynamicSecretValue.mockResolvedValueOnce({
-      "/some2/dynamic2/secret2": 'secret-value-2',
+      access_key_id: 'AKIB...',
+      secret_access_key: 'secret-2',
     });
     core.setSecret = jest.fn();
     core.setOutput = jest.fn();
@@ -161,12 +164,160 @@ describe('testing secret exports', () => {
       name: "/some2/dynamic2/secret2",
     });
 
-    // Check if core functions are called with the correct values
+    // Without key, output-name is honored and the full object is exported
     expect(core.setSecret).toHaveBeenCalledTimes(3);
-    expect(core.setOutput).toHaveBeenCalledWith('my_first_secret', {"/some/dynamic/secret": 'secret-value-1'});
-    expect(core.setOutput).toHaveBeenCalledWith("my_second_secret", {"/some2/dynamic2/secret2": 'secret-value-2'});
-    expect(core.exportVariable).toHaveBeenCalledWith('my_first_secret', {"/some/dynamic/secret": 'secret-value-1'});
-    expect(core.exportVariable).toHaveBeenCalledWith('my_second_secret', {"/some2/dynamic2/secret2": 'secret-value-2'});
+    expect(core.setOutput).toHaveBeenCalledWith('my_first_secret', {
+      access_key_id: 'AKIA...',
+      secret_access_key: 'secret-1',
+    });
+    expect(core.setOutput).toHaveBeenCalledWith("my_second_secret", {
+      access_key_id: 'AKIB...',
+      secret_access_key: 'secret-2',
+    });
+    expect(core.exportVariable).toHaveBeenCalledWith('my_first_secret', {
+      access_key_id: 'AKIA...',
+      secret_access_key: 'secret-1',
+    });
+    expect(core.exportVariable).toHaveBeenCalledWith('my_second_secret', {
+      access_key_id: 'AKIB...',
+      secret_access_key: 'secret-2',
+    });
+  });
+
+  it('should extract dynamic secret key from object response (e.g. GitHub token)', async function () {
+    const args = {
+      akeylessToken: "akeylessToken",
+      dynamicSecrets: [
+        {
+          name: "/cloud/github/github-ds",
+          "output-name": "TOKEN",
+          key: "token",
+        },
+      ],
+      apiUrl: 'https://api.akeyless.io',
+      exportSecretsToOutputs: true,
+      exportSecretsToEnvironment: true,
+      parseJsonSecrets: false,
+    };
+    const api = {
+      getDynamicSecretValue: jest.fn(),
+    };
+    akeylessApi.api.mockReturnValue(api);
+    api.getDynamicSecretValue.mockResolvedValueOnce({
+      token: 'ghp_test_token',
+      ttl: 3600,
+    });
+    core.setSecret = jest.fn();
+    core.setOutput = jest.fn();
+    core.exportVariable = jest.fn();
+    core.setFailed = jest.fn();
+
+    await secrets.handleExportSecrets(args);
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+    expect(core.setOutput).toHaveBeenCalledWith('TOKEN', 'ghp_test_token');
+    expect(core.exportVariable).toHaveBeenCalledWith('TOKEN', 'ghp_test_token');
+  });
+
+  it('should extract dynamic secret key with parse-json-secrets enabled', async function () {
+    const args = {
+      akeylessToken: "akeylessToken",
+      dynamicSecrets: [
+        {
+          name: "/cloud/github/github-ds",
+          "output-name": "TOKEN",
+          key: "token",
+        },
+      ],
+      apiUrl: 'https://api.akeyless.io',
+      exportSecretsToOutputs: true,
+      exportSecretsToEnvironment: true,
+      parseJsonSecrets: true,
+    };
+    const api = {
+      getDynamicSecretValue: jest.fn(),
+    };
+    akeylessApi.api.mockReturnValue(api);
+    api.getDynamicSecretValue.mockResolvedValueOnce({
+      token: 'ghp_test_token',
+      ttl: 3600,
+    });
+    core.setSecret = jest.fn();
+    core.setOutput = jest.fn();
+    core.exportVariable = jest.fn();
+    core.setFailed = jest.fn();
+
+    await secrets.handleExportSecrets(args);
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+    expect(core.setOutput).toHaveBeenCalledWith('TOKEN', 'ghp_test_token');
+    expect(core.exportVariable).toHaveBeenCalledWith('TOKEN', 'ghp_test_token');
+  });
+
+  it('should extract dynamic secret key from JSON string response', async function () {
+    const args = {
+      akeylessToken: "akeylessToken",
+      dynamicSecrets: [
+        {
+          name: "/cloud/github/github-ds",
+          "output-name": "TOKEN",
+          key: "token",
+        },
+      ],
+      apiUrl: 'https://api.akeyless.io',
+      exportSecretsToOutputs: true,
+      exportSecretsToEnvironment: false,
+      parseJsonSecrets: false,
+    };
+    const api = {
+      getDynamicSecretValue: jest.fn(),
+    };
+    akeylessApi.api.mockReturnValue(api);
+    api.getDynamicSecretValue.mockResolvedValueOnce('{"token":"ghp_from_string","ttl":3600}');
+    core.setSecret = jest.fn();
+    core.setOutput = jest.fn();
+    core.exportVariable = jest.fn();
+    core.setFailed = jest.fn();
+
+    await secrets.handleExportSecrets(args);
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+    expect(core.setOutput).toHaveBeenCalledWith('TOKEN', 'ghp_from_string');
+  });
+
+  it('should expand dynamic secret JSON fields when parse-json-secrets is set without key', async function () {
+    const args = {
+      akeylessToken: "akeylessToken",
+      dynamicSecrets: [
+        {
+          name: "/cloud/github/github-ds",
+          "output-name": "TOKEN",
+          "prefix-json-secrets": "GH",
+        },
+      ],
+      apiUrl: 'https://api.akeyless.io',
+      exportSecretsToOutputs: true,
+      exportSecretsToEnvironment: false,
+      parseJsonSecrets: true,
+    };
+    const api = {
+      getDynamicSecretValue: jest.fn(),
+    };
+    akeylessApi.api.mockReturnValue(api);
+    api.getDynamicSecretValue.mockResolvedValueOnce({
+      token: 'ghp_test_token',
+      ttl: 3600,
+    });
+    core.setSecret = jest.fn();
+    core.setOutput = jest.fn();
+    core.exportVariable = jest.fn();
+
+    await secrets.handleExportSecrets(args);
+
+    expect(core.setOutput).toHaveBeenCalledWith('GH_TOKEN', 'ghp_test_token');
+    expect(core.setOutput).toHaveBeenCalledWith('GH_TTL', 3600);
+    // output-name is not used when expanding all JSON fields (same as static secrets)
+    expect(core.setOutput).not.toHaveBeenCalledWith('TOKEN', expect.anything());
   });
 
   it('should export rotated secret', async function () {

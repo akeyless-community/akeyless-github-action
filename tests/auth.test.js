@@ -1,13 +1,13 @@
-const akeylessCloud = require("akeyless-cloud-id");
+const akeylessCloud = require('../src/cloud_id');
 const mockFs = require('mock-fs');
 jest.mock('@actions/core');
 jest.mock('../src/akeyless_api');
-jest.mock('akeyless-cloud-id');
+jest.mock('../src/cloud_id');
 
 core = require('@actions/core');
 akeylessApi = require('../src/akeyless_api');
 akeyless = require('akeyless');
-akeylessCloudId = require('akeyless-cloud-id');
+akeylessCloudId = require('../src/cloud_id');
 auth = require('../src/auth');
 
 describe('Akeyless authentication', () => {
