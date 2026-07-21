@@ -88,7 +88,8 @@ async function exportDynamicSecrets(akeylessToken, dynamicSecrets, apiUrl, expor
         }
     } catch (error) {
         core.debug(`Failed to export dynamic secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
-        core.setFailed('Failed to export dynamic secret');
+        const errorMessage = error?.message || (typeof error === 'object' ? JSON.stringify(error) : error);
+        core.setFailed(`Failed to export dynamic secret: ${errorMessage}`);
     }
 }
 async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets) {
@@ -187,16 +188,24 @@ function convertPathNameToPrefix(pathName) {
 function processSecretValue(secret, key) {
     if (!key) return secret;
 
-    try {
-        const secretObj = JSON.parse(secret);
-        if (key in secretObj) {
-            return secretObj[key];
-        } else {
-            throw new Error(`Key '${key}' not found in secret`);
+    let secretObj;
+    if (typeof secret === 'object' && secret !== null && !Array.isArray(secret)) {
+        // Dynamic/rotated APIs often return already-parsed objects.
+        secretObj = secret;
+    } else if (typeof secret === 'string') {
+        try {
+            secretObj = JSON.parse(secret);
+        } catch (e) {
+            throw new Error(`Error processing secret value: ${e.message}`);
         }
-    } catch (e) {
-        throw new Error(`Error processing secret value: ${e.message}`);
+    } else {
+        throw new Error(`Error processing secret value: Secret value must be a JSON object or string to extract key '${key}'`);
     }
+
+    if (!Object.prototype.hasOwnProperty.call(secretObj, key)) {
+        throw new Error(`Error processing secret value: Key '${key}' not found in secret`);
+    }
+    return secretObj[key];
 }
 
 function exportSecretToOutput(variableName, secretValue, exportSecretsToOutputs, exportSecretsToEnvironment) {
