@@ -12,13 +12,11 @@
   "license": "ISC",
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "@aws-crypto/sha256-js": "^5.2.0",
     "@aws-sdk/credential-providers": "^3.1090.0",
     "@azure/identity": "^4.8.0",
     "@google-cloud/iam-credentials": "^3.3.0",
-    "@smithy/protocol-http": "^5.3.8",
-    "@smithy/signature-v4": "^5.3.8",
     "akeyless": "^3.3.16",
+    "aws4": "^1.13.2",
     "google-auth-library": "^9.15.1",
     "js-yaml": "^4.1.0"
   },
