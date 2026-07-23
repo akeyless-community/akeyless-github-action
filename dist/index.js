@@ -311339,9 +311339,10 @@ const path = __nccwpck_require__(16928);
 const akeylessCloud = __nccwpck_require__(81510);
 
 function handleActionFail(message, debugMessage) {
-    core.debug(debugMessage);  // Only visible with ACTIONS_RUNNER_DEBUG=true
-    core.setFailed(message);   // Always visible
-    throw new Error(message);
+    const detail = debugMessage || message;
+    core.error(detail);
+    core.setFailed(detail);
+    throw new Error(detail);
 }
 
 
@@ -311368,7 +311369,15 @@ async function jwtLogin(apiUrl, accessId) {
 
 async function awsIamLogin(apiUrl, accessId) {
     core.debug('getting aws cloud id');
-    const awsCloudId = await akeylessCloud.getCloudId('aws_iam')
+    let awsCloudId;
+    try {
+        awsCloudId = await akeylessCloud.getCloudId('aws_iam');
+    } catch (error) {
+        handleActionFail(
+            'Failed to login to Akeyless',
+            `Failed to obtain AWS cloud id (check runner IAM role / credentials): ${error && error.message ? error.message : error}`
+        );
+    }
     const opts = {
         "access-type": 'aws_iam',
         'access-id': accessId,
@@ -311428,7 +311437,10 @@ async function loginHelper(opts, apiUrl) {
         const authResult = await api.auth(authBody)
         return authResult
     } catch (error) {
-        handleActionFail('Failed to login to Akeyless', `Failed to login to AKeyless: ${typeof error === 'object' ? JSON.stringify(error) : error}`)
+        const detail = typeof error === 'object'
+            ? (error.body ? JSON.stringify(error.body) : JSON.stringify(error))
+            : String(error);
+        handleActionFail('Failed to login to Akeyless', `Failed to login to Akeyless: ${detail}`)
     }
 }
 
@@ -311447,9 +311459,10 @@ const allowedAccessTypes = Object.keys(login);
 async function akeylessLogin(accessId, accessType, apiUrl) {
     try {
         core.debug('fetch token');
-        return login[accessType](apiUrl, accessId);
+        return await login[accessType](apiUrl, accessId);
     } catch (error) {
-        handleActionFail('failed to fetch token', error.message);
+        // login helpers already call setFailed; rethrow so callers stop
+        throw error;
     }
 }
 
@@ -346690,7 +346703,7 @@ async function run() {
         }
     } catch (error) {
         core.debug(`Failed to login to Akeyless: ${error}`);
-        core.setFailed(`Failed to login to Akeyless`);
+        core.setFailed(`Failed to login to Akeyless: ${error && error.message ? error.message : error}`);
         return;
     }
 

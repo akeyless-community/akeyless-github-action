@@ -39,7 +39,7 @@ async function run() {
         }
     } catch (error) {
         core.debug(`Failed to login to Akeyless: ${error}`);
-        core.setFailed(`Failed to login to Akeyless`);
+        core.setFailed(`Failed to login to Akeyless: ${error && error.message ? error.message : error}`);
         return;
     }
 
