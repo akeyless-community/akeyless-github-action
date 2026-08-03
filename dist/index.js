@@ -3195,467 +3195,6 @@ function copyFile(srcFile, destFile, force) {
 
 /***/ }),
 
-/***/ 69237:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.RawSha256 = void 0;
-var constants_1 = __nccwpck_require__(75897);
-/**
- * @internal
- */
-var RawSha256 = /** @class */ (function () {
-    function RawSha256() {
-        this.state = Int32Array.from(constants_1.INIT);
-        this.temp = new Int32Array(64);
-        this.buffer = new Uint8Array(64);
-        this.bufferLength = 0;
-        this.bytesHashed = 0;
-        /**
-         * @internal
-         */
-        this.finished = false;
-    }
-    RawSha256.prototype.update = function (data) {
-        if (this.finished) {
-            throw new Error("Attempted to update an already finished hash.");
-        }
-        var position = 0;
-        var byteLength = data.byteLength;
-        this.bytesHashed += byteLength;
-        if (this.bytesHashed * 8 > constants_1.MAX_HASHABLE_LENGTH) {
-            throw new Error("Cannot hash more than 2^53 - 1 bits");
-        }
-        while (byteLength > 0) {
-            this.buffer[this.bufferLength++] = data[position++];
-            byteLength--;
-            if (this.bufferLength === constants_1.BLOCK_SIZE) {
-                this.hashBuffer();
-                this.bufferLength = 0;
-            }
-        }
-    };
-    RawSha256.prototype.digest = function () {
-        if (!this.finished) {
-            var bitsHashed = this.bytesHashed * 8;
-            var bufferView = new DataView(this.buffer.buffer, this.buffer.byteOffset, this.buffer.byteLength);
-            var undecoratedLength = this.bufferLength;
-            bufferView.setUint8(this.bufferLength++, 0x80);
-            // Ensure the final block has enough room for the hashed length
-            if (undecoratedLength % constants_1.BLOCK_SIZE >= constants_1.BLOCK_SIZE - 8) {
-                for (var i = this.bufferLength; i < constants_1.BLOCK_SIZE; i++) {
-                    bufferView.setUint8(i, 0);
-                }
-                this.hashBuffer();
-                this.bufferLength = 0;
-            }
-            for (var i = this.bufferLength; i < constants_1.BLOCK_SIZE - 8; i++) {
-                bufferView.setUint8(i, 0);
-            }
-            bufferView.setUint32(constants_1.BLOCK_SIZE - 8, Math.floor(bitsHashed / 0x100000000), true);
-            bufferView.setUint32(constants_1.BLOCK_SIZE - 4, bitsHashed);
-            this.hashBuffer();
-            this.finished = true;
-        }
-        // The value in state is little-endian rather than big-endian, so flip
-        // each word into a new Uint8Array
-        var out = new Uint8Array(constants_1.DIGEST_LENGTH);
-        for (var i = 0; i < 8; i++) {
-            out[i * 4] = (this.state[i] >>> 24) & 0xff;
-            out[i * 4 + 1] = (this.state[i] >>> 16) & 0xff;
-            out[i * 4 + 2] = (this.state[i] >>> 8) & 0xff;
-            out[i * 4 + 3] = (this.state[i] >>> 0) & 0xff;
-        }
-        return out;
-    };
-    RawSha256.prototype.hashBuffer = function () {
-        var _a = this, buffer = _a.buffer, state = _a.state;
-        var state0 = state[0], state1 = state[1], state2 = state[2], state3 = state[3], state4 = state[4], state5 = state[5], state6 = state[6], state7 = state[7];
-        for (var i = 0; i < constants_1.BLOCK_SIZE; i++) {
-            if (i < 16) {
-                this.temp[i] =
-                    ((buffer[i * 4] & 0xff) << 24) |
-                        ((buffer[i * 4 + 1] & 0xff) << 16) |
-                        ((buffer[i * 4 + 2] & 0xff) << 8) |
-                        (buffer[i * 4 + 3] & 0xff);
-            }
-            else {
-                var u = this.temp[i - 2];
-                var t1_1 = ((u >>> 17) | (u << 15)) ^ ((u >>> 19) | (u << 13)) ^ (u >>> 10);
-                u = this.temp[i - 15];
-                var t2_1 = ((u >>> 7) | (u << 25)) ^ ((u >>> 18) | (u << 14)) ^ (u >>> 3);
-                this.temp[i] =
-                    ((t1_1 + this.temp[i - 7]) | 0) + ((t2_1 + this.temp[i - 16]) | 0);
-            }
-            var t1 = ((((((state4 >>> 6) | (state4 << 26)) ^
-                ((state4 >>> 11) | (state4 << 21)) ^
-                ((state4 >>> 25) | (state4 << 7))) +
-                ((state4 & state5) ^ (~state4 & state6))) |
-                0) +
-                ((state7 + ((constants_1.KEY[i] + this.temp[i]) | 0)) | 0)) |
-                0;
-            var t2 = ((((state0 >>> 2) | (state0 << 30)) ^
-                ((state0 >>> 13) | (state0 << 19)) ^
-                ((state0 >>> 22) | (state0 << 10))) +
-                ((state0 & state1) ^ (state0 & state2) ^ (state1 & state2))) |
-                0;
-            state7 = state6;
-            state6 = state5;
-            state5 = state4;
-            state4 = (state3 + t1) | 0;
-            state3 = state2;
-            state2 = state1;
-            state1 = state0;
-            state0 = (t1 + t2) | 0;
-        }
-        state[0] += state0;
-        state[1] += state1;
-        state[2] += state2;
-        state[3] += state3;
-        state[4] += state4;
-        state[5] += state5;
-        state[6] += state6;
-        state[7] += state7;
-    };
-    return RawSha256;
-}());
-exports.RawSha256 = RawSha256;
-//# sourceMappingURL=RawSha256.js.map
-
-/***/ }),
-
-/***/ 75897:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.MAX_HASHABLE_LENGTH = exports.INIT = exports.KEY = exports.DIGEST_LENGTH = exports.BLOCK_SIZE = void 0;
-/**
- * @internal
- */
-exports.BLOCK_SIZE = 64;
-/**
- * @internal
- */
-exports.DIGEST_LENGTH = 32;
-/**
- * @internal
- */
-exports.KEY = new Uint32Array([
-    0x428a2f98,
-    0x71374491,
-    0xb5c0fbcf,
-    0xe9b5dba5,
-    0x3956c25b,
-    0x59f111f1,
-    0x923f82a4,
-    0xab1c5ed5,
-    0xd807aa98,
-    0x12835b01,
-    0x243185be,
-    0x550c7dc3,
-    0x72be5d74,
-    0x80deb1fe,
-    0x9bdc06a7,
-    0xc19bf174,
-    0xe49b69c1,
-    0xefbe4786,
-    0x0fc19dc6,
-    0x240ca1cc,
-    0x2de92c6f,
-    0x4a7484aa,
-    0x5cb0a9dc,
-    0x76f988da,
-    0x983e5152,
-    0xa831c66d,
-    0xb00327c8,
-    0xbf597fc7,
-    0xc6e00bf3,
-    0xd5a79147,
-    0x06ca6351,
-    0x14292967,
-    0x27b70a85,
-    0x2e1b2138,
-    0x4d2c6dfc,
-    0x53380d13,
-    0x650a7354,
-    0x766a0abb,
-    0x81c2c92e,
-    0x92722c85,
-    0xa2bfe8a1,
-    0xa81a664b,
-    0xc24b8b70,
-    0xc76c51a3,
-    0xd192e819,
-    0xd6990624,
-    0xf40e3585,
-    0x106aa070,
-    0x19a4c116,
-    0x1e376c08,
-    0x2748774c,
-    0x34b0bcb5,
-    0x391c0cb3,
-    0x4ed8aa4a,
-    0x5b9cca4f,
-    0x682e6ff3,
-    0x748f82ee,
-    0x78a5636f,
-    0x84c87814,
-    0x8cc70208,
-    0x90befffa,
-    0xa4506ceb,
-    0xbef9a3f7,
-    0xc67178f2
-]);
-/**
- * @internal
- */
-exports.INIT = [
-    0x6a09e667,
-    0xbb67ae85,
-    0x3c6ef372,
-    0xa54ff53a,
-    0x510e527f,
-    0x9b05688c,
-    0x1f83d9ab,
-    0x5be0cd19
-];
-/**
- * @internal
- */
-exports.MAX_HASHABLE_LENGTH = Math.pow(2, 53) - 1;
-//# sourceMappingURL=constants.js.map
-
-/***/ }),
-
-/***/ 23156:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-var tslib_1 = __nccwpck_require__(61860);
-tslib_1.__exportStar(__nccwpck_require__(26797), exports);
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 26797:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Sha256 = void 0;
-var tslib_1 = __nccwpck_require__(61860);
-var constants_1 = __nccwpck_require__(75897);
-var RawSha256_1 = __nccwpck_require__(69237);
-var util_1 = __nccwpck_require__(95667);
-var Sha256 = /** @class */ (function () {
-    function Sha256(secret) {
-        this.secret = secret;
-        this.hash = new RawSha256_1.RawSha256();
-        this.reset();
-    }
-    Sha256.prototype.update = function (toHash) {
-        if ((0, util_1.isEmptyData)(toHash) || this.error) {
-            return;
-        }
-        try {
-            this.hash.update((0, util_1.convertToBuffer)(toHash));
-        }
-        catch (e) {
-            this.error = e;
-        }
-    };
-    /* This synchronous method keeps compatibility
-     * with the v2 aws-sdk.
-     */
-    Sha256.prototype.digestSync = function () {
-        if (this.error) {
-            throw this.error;
-        }
-        if (this.outer) {
-            if (!this.outer.finished) {
-                this.outer.update(this.hash.digest());
-            }
-            return this.outer.digest();
-        }
-        return this.hash.digest();
-    };
-    /* The underlying digest method here is synchronous.
-     * To keep the same interface with the other hash functions
-     * the default is to expose this as an async method.
-     * However, it can sometimes be useful to have a sync method.
-     */
-    Sha256.prototype.digest = function () {
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            return tslib_1.__generator(this, function (_a) {
-                return [2 /*return*/, this.digestSync()];
-            });
-        });
-    };
-    Sha256.prototype.reset = function () {
-        this.hash = new RawSha256_1.RawSha256();
-        if (this.secret) {
-            this.outer = new RawSha256_1.RawSha256();
-            var inner = bufferFromSecret(this.secret);
-            var outer = new Uint8Array(constants_1.BLOCK_SIZE);
-            outer.set(inner);
-            for (var i = 0; i < constants_1.BLOCK_SIZE; i++) {
-                inner[i] ^= 0x36;
-                outer[i] ^= 0x5c;
-            }
-            this.hash.update(inner);
-            this.outer.update(outer);
-            // overwrite the copied key in memory
-            for (var i = 0; i < inner.byteLength; i++) {
-                inner[i] = 0;
-            }
-        }
-    };
-    return Sha256;
-}());
-exports.Sha256 = Sha256;
-function bufferFromSecret(secret) {
-    var input = (0, util_1.convertToBuffer)(secret);
-    if (input.byteLength > constants_1.BLOCK_SIZE) {
-        var bufferHash = new RawSha256_1.RawSha256();
-        bufferHash.update(input);
-        input = bufferHash.digest();
-    }
-    var buffer = new Uint8Array(constants_1.BLOCK_SIZE);
-    buffer.set(input);
-    return buffer;
-}
-//# sourceMappingURL=jsSha256.js.map
-
-/***/ }),
-
-/***/ 45675:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.convertToBuffer = void 0;
-var util_utf8_1 = __nccwpck_require__(71577);
-// Quick polyfill
-var fromUtf8 = typeof Buffer !== "undefined" && Buffer.from
-    ? function (input) { return Buffer.from(input, "utf8"); }
-    : util_utf8_1.fromUtf8;
-function convertToBuffer(data) {
-    // Already a Uint8, do nothing
-    if (data instanceof Uint8Array)
-        return data;
-    if (typeof data === "string") {
-        return fromUtf8(data);
-    }
-    if (ArrayBuffer.isView(data)) {
-        return new Uint8Array(data.buffer, data.byteOffset, data.byteLength / Uint8Array.BYTES_PER_ELEMENT);
-    }
-    return new Uint8Array(data);
-}
-exports.convertToBuffer = convertToBuffer;
-//# sourceMappingURL=convertToBuffer.js.map
-
-/***/ }),
-
-/***/ 95667:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uint32ArrayFrom = exports.numToUint8 = exports.isEmptyData = exports.convertToBuffer = void 0;
-var convertToBuffer_1 = __nccwpck_require__(45675);
-Object.defineProperty(exports, "convertToBuffer", ({ enumerable: true, get: function () { return convertToBuffer_1.convertToBuffer; } }));
-var isEmptyData_1 = __nccwpck_require__(14658);
-Object.defineProperty(exports, "isEmptyData", ({ enumerable: true, get: function () { return isEmptyData_1.isEmptyData; } }));
-var numToUint8_1 = __nccwpck_require__(35436);
-Object.defineProperty(exports, "numToUint8", ({ enumerable: true, get: function () { return numToUint8_1.numToUint8; } }));
-var uint32ArrayFrom_1 = __nccwpck_require__(50673);
-Object.defineProperty(exports, "uint32ArrayFrom", ({ enumerable: true, get: function () { return uint32ArrayFrom_1.uint32ArrayFrom; } }));
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 14658:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isEmptyData = void 0;
-function isEmptyData(data) {
-    if (typeof data === "string") {
-        return data.length === 0;
-    }
-    return data.byteLength === 0;
-}
-exports.isEmptyData = isEmptyData;
-//# sourceMappingURL=isEmptyData.js.map
-
-/***/ }),
-
-/***/ 35436:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.numToUint8 = void 0;
-function numToUint8(num) {
-    return new Uint8Array([
-        (num & 0xff000000) >> 24,
-        (num & 0x00ff0000) >> 16,
-        (num & 0x0000ff00) >> 8,
-        num & 0x000000ff,
-    ]);
-}
-exports.numToUint8 = numToUint8;
-//# sourceMappingURL=numToUint8.js.map
-
-/***/ }),
-
-/***/ 50673:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uint32ArrayFrom = void 0;
-// IE 11 does not support Array.from, so we do it manually
-function uint32ArrayFrom(a_lookUpTable) {
-    if (!Uint32Array.from) {
-        var return_array = new Uint32Array(a_lookUpTable.length);
-        var a_index = 0;
-        while (a_index < a_lookUpTable.length) {
-            return_array[a_index] = a_lookUpTable[a_index];
-            a_index += 1;
-        }
-        return return_array;
-    }
-    return Uint32Array.from(a_lookUpTable);
-}
-exports.uint32ArrayFrom = uint32ArrayFrom;
-//# sourceMappingURL=uint32ArrayFrom.js.map
-
-/***/ }),
-
 /***/ 5152:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -64421,43 +63960,6 @@ exports.providerConfigFromInit = providerConfigFromInit;
 
 /***/ }),
 
-/***/ 86130:
-/***/ ((module) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  isArrayBuffer: () => isArrayBuffer
-});
-module.exports = __toCommonJS(src_exports);
-var isArrayBuffer = /* @__PURE__ */ __name((arg) => typeof ArrayBuffer === "function" && arg instanceof ArrayBuffer || Object.prototype.toString.call(arg) === "[object ArrayBuffer]", "isArrayBuffer");
-// Annotate the CommonJS export names for ESM import in node:
-
-0 && (0);
-
-
-
-/***/ }),
-
 /***/ 61279:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -65305,25 +64807,6 @@ exports.NodeHttpHandler = NodeHttpHandler;
 
 /***/ }),
 
-/***/ 72356:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.resolveHttpHandlerRuntimeConfig = exports.getHttpHandlerExtensionConfiguration = exports.isValidHostname = exports.HttpResponse = exports.HttpRequest = exports.Fields = exports.Field = void 0;
-var protocols_1 = __nccwpck_require__(93422);
-Object.defineProperty(exports, "Field", ({ enumerable: true, get: function () { return protocols_1.Field; } }));
-Object.defineProperty(exports, "Fields", ({ enumerable: true, get: function () { return protocols_1.Fields; } }));
-Object.defineProperty(exports, "HttpRequest", ({ enumerable: true, get: function () { return protocols_1.HttpRequest; } }));
-Object.defineProperty(exports, "HttpResponse", ({ enumerable: true, get: function () { return protocols_1.HttpResponse; } }));
-Object.defineProperty(exports, "isValidHostname", ({ enumerable: true, get: function () { return protocols_1.isValidHostname; } }));
-Object.defineProperty(exports, "getHttpHandlerExtensionConfiguration", ({ enumerable: true, get: function () { return protocols_1.getHttpHandlerExtensionConfiguration; } }));
-Object.defineProperty(exports, "resolveHttpHandlerRuntimeConfig", ({ enumerable: true, get: function () { return protocols_1.resolveHttpHandlerRuntimeConfig; } }));
-
-
-/***/ }),
-
 /***/ 75118:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -66000,125 +65483,6 @@ exports.RequestHandlerProtocol = RequestHandlerProtocol;
 exports.SMITHY_CONTEXT_KEY = SMITHY_CONTEXT_KEY;
 exports.getDefaultClientConfiguration = getDefaultClientConfiguration;
 exports.resolveDefaultRuntimeConfig = resolveDefaultRuntimeConfig;
-
-
-/***/ }),
-
-/***/ 44151:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  fromArrayBuffer: () => fromArrayBuffer,
-  fromString: () => fromString
-});
-module.exports = __toCommonJS(src_exports);
-var import_is_array_buffer = __nccwpck_require__(86130);
-var import_buffer = __nccwpck_require__(20181);
-var fromArrayBuffer = /* @__PURE__ */ __name((input, offset = 0, length = input.byteLength - offset) => {
-  if (!(0, import_is_array_buffer.isArrayBuffer)(input)) {
-    throw new TypeError(`The "input" argument must be ArrayBuffer. Received type ${typeof input} (${input})`);
-  }
-  return import_buffer.Buffer.from(input, offset, length);
-}, "fromArrayBuffer");
-var fromString = /* @__PURE__ */ __name((input, encoding) => {
-  if (typeof input !== "string") {
-    throw new TypeError(`The "input" argument must be of type string. Received type ${typeof input} (${input})`);
-  }
-  return encoding ? import_buffer.Buffer.from(input, encoding) : import_buffer.Buffer.from(input);
-}, "fromString");
-// Annotate the CommonJS export names for ESM import in node:
-
-0 && (0);
-
-
-
-/***/ }),
-
-/***/ 71577:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  fromUtf8: () => fromUtf8,
-  toUint8Array: () => toUint8Array,
-  toUtf8: () => toUtf8
-});
-module.exports = __toCommonJS(src_exports);
-
-// src/fromUtf8.ts
-var import_util_buffer_from = __nccwpck_require__(44151);
-var fromUtf8 = /* @__PURE__ */ __name((input) => {
-  const buf = (0, import_util_buffer_from.fromString)(input, "utf8");
-  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength / Uint8Array.BYTES_PER_ELEMENT);
-}, "fromUtf8");
-
-// src/toUint8Array.ts
-var toUint8Array = /* @__PURE__ */ __name((data) => {
-  if (typeof data === "string") {
-    return fromUtf8(data);
-  }
-  if (ArrayBuffer.isView(data)) {
-    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength / Uint8Array.BYTES_PER_ELEMENT);
-  }
-  return new Uint8Array(data);
-}, "toUint8Array");
-
-// src/toUtf8.ts
-
-var toUtf8 = /* @__PURE__ */ __name((input) => {
-  if (typeof input === "string") {
-    return input;
-  }
-  if (typeof input !== "object" || typeof input.byteOffset !== "number" || typeof input.byteLength !== "number") {
-    throw new Error("@smithy/util-utf8: toUtf8 encoder function only accepts string | Uint8Array.");
-  }
-  return (0, import_util_buffer_from.fromArrayBuffer)(input.buffer, input.byteOffset, input.byteLength).toString("utf8");
-}, "toUtf8");
-// Annotate the CommonJS export names for ESM import in node:
-
-0 && (0);
-
 
 
 /***/ }),
@@ -226817,6 +226181,499 @@ function descending(a, b)
 
 /***/ }),
 
+/***/ 88832:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+var aws4 = exports,
+    url = __nccwpck_require__(87016),
+    querystring = __nccwpck_require__(83480),
+    crypto = __nccwpck_require__(76982),
+    lru = __nccwpck_require__(22638),
+    credentialsCache = lru(1000)
+
+// http://docs.amazonwebservices.com/general/latest/gr/signature-version-4.html
+
+function hmac(key, string, encoding) {
+  return crypto.createHmac('sha256', key).update(string, 'utf8').digest(encoding)
+}
+
+function hash(string, encoding) {
+  return crypto.createHash('sha256').update(string, 'utf8').digest(encoding)
+}
+
+// This function assumes the string has already been percent encoded
+function encodeRfc3986(urlEncodedString) {
+  return urlEncodedString.replace(/[!'()*]/g, function(c) {
+    return '%' + c.charCodeAt(0).toString(16).toUpperCase()
+  })
+}
+
+function encodeRfc3986Full(str) {
+  return encodeRfc3986(encodeURIComponent(str))
+}
+
+// A bit of a combination of:
+// https://github.com/aws/aws-sdk-java-v2/blob/dc695de6ab49ad03934e1b02e7263abbd2354be0/core/auth/src/main/java/software/amazon/awssdk/auth/signer/internal/AbstractAws4Signer.java#L59
+// https://github.com/aws/aws-sdk-js/blob/18cb7e5b463b46239f9fdd4a65e2ff8c81831e8f/lib/signers/v4.js#L191-L199
+// https://github.com/mhart/aws4fetch/blob/b3aed16b6f17384cf36ea33bcba3c1e9f3bdfefd/src/main.js#L25-L34
+var HEADERS_TO_IGNORE = {
+  'authorization': true,
+  'connection': true,
+  'x-amzn-trace-id': true,
+  'user-agent': true,
+  'expect': true,
+  'presigned-expires': true,
+  'range': true,
+}
+
+// request: { path | body, [host], [method], [headers], [service], [region] }
+// credentials: { accessKeyId, secretAccessKey, [sessionToken] }
+function RequestSigner(request, credentials) {
+
+  if (typeof request === 'string') request = url.parse(request)
+
+  var headers = request.headers = Object.assign({}, (request.headers || {})),
+      hostParts = (!this.service || !this.region) && this.matchHost(request.hostname || request.host || headers.Host || headers.host)
+
+  this.request = request
+  this.credentials = credentials || this.defaultCredentials()
+
+  this.service = request.service || hostParts[0] || ''
+  this.region = request.region || hostParts[1] || 'us-east-1'
+
+  // SES uses a different domain from the service name
+  if (this.service === 'email') this.service = 'ses'
+
+  if (!request.method && request.body)
+    request.method = 'POST'
+
+  if (!headers.Host && !headers.host) {
+    headers.Host = request.hostname || request.host || this.createHost()
+
+    // If a port is specified explicitly, use it as is
+    if (request.port)
+      headers.Host += ':' + request.port
+  }
+  if (!request.hostname && !request.host)
+    request.hostname = headers.Host || headers.host
+
+  this.isCodeCommitGit = this.service === 'codecommit' && request.method === 'GIT'
+
+  this.extraHeadersToIgnore = request.extraHeadersToIgnore || Object.create(null)
+  this.extraHeadersToInclude = request.extraHeadersToInclude || Object.create(null)
+}
+
+RequestSigner.prototype.matchHost = function(host) {
+  var match = (host || '').match(/([^\.]{1,63})\.(?:([^\.]{0,63})\.)?amazonaws\.com(\.cn)?$/)
+  var hostParts = (match || []).slice(1, 3)
+
+  // ES's hostParts are sometimes the other way round, if the value that is expected
+  // to be region equals ‘es’ switch them back
+  // e.g. search-cluster-name-aaaa00aaaa0aaa0aaaaaaa0aaa.us-east-1.es.amazonaws.com
+  if (hostParts[1] === 'es' || hostParts[1] === 'aoss')
+    hostParts = hostParts.reverse()
+
+  if (hostParts[1] == 's3') {
+    hostParts[0] = 's3'
+    hostParts[1] = 'us-east-1'
+  } else {
+    for (var i = 0; i < 2; i++) {
+      if (/^s3-/.test(hostParts[i])) {
+        hostParts[1] = hostParts[i].slice(3)
+        hostParts[0] = 's3'
+        break
+      }
+    }
+  }
+
+  return hostParts
+}
+
+// http://docs.aws.amazon.com/general/latest/gr/rande.html
+RequestSigner.prototype.isSingleRegion = function() {
+  // Special case for S3 and SimpleDB in us-east-1
+  if (['s3', 'sdb'].indexOf(this.service) >= 0 && this.region === 'us-east-1') return true
+
+  return ['cloudfront', 'ls', 'route53', 'iam', 'importexport', 'sts']
+    .indexOf(this.service) >= 0
+}
+
+RequestSigner.prototype.createHost = function() {
+  var region = this.isSingleRegion() ? '' : '.' + this.region,
+      subdomain = this.service === 'ses' ? 'email' : this.service
+  return subdomain + region + '.amazonaws.com'
+}
+
+RequestSigner.prototype.prepareRequest = function() {
+  this.parsePath()
+
+  var request = this.request, headers = request.headers, query
+
+  if (request.signQuery) {
+
+    this.parsedPath.query = query = this.parsedPath.query || {}
+
+    if (this.credentials.sessionToken)
+      query['X-Amz-Security-Token'] = this.credentials.sessionToken
+
+    if (this.service === 's3' && !query['X-Amz-Expires'])
+      query['X-Amz-Expires'] = 86400
+
+    if (query['X-Amz-Date'])
+      this.datetime = query['X-Amz-Date']
+    else
+      query['X-Amz-Date'] = this.getDateTime()
+
+    query['X-Amz-Algorithm'] = 'AWS4-HMAC-SHA256'
+    query['X-Amz-Credential'] = this.credentials.accessKeyId + '/' + this.credentialString()
+    query['X-Amz-SignedHeaders'] = this.signedHeaders()
+
+  } else {
+
+    if (!request.doNotModifyHeaders && !this.isCodeCommitGit) {
+      if (request.body && !headers['Content-Type'] && !headers['content-type'])
+        headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8'
+
+      if (request.body && !headers['Content-Length'] && !headers['content-length'])
+        headers['Content-Length'] = Buffer.byteLength(request.body)
+
+      if (this.credentials.sessionToken && !headers['X-Amz-Security-Token'] && !headers['x-amz-security-token'])
+        headers['X-Amz-Security-Token'] = this.credentials.sessionToken
+
+      if (this.service === 's3' && !headers['X-Amz-Content-Sha256'] && !headers['x-amz-content-sha256'])
+        headers['X-Amz-Content-Sha256'] = hash(this.request.body || '', 'hex')
+
+      if (headers['X-Amz-Date'] || headers['x-amz-date'])
+        this.datetime = headers['X-Amz-Date'] || headers['x-amz-date']
+      else
+        headers['X-Amz-Date'] = this.getDateTime()
+    }
+
+    delete headers.Authorization
+    delete headers.authorization
+  }
+}
+
+RequestSigner.prototype.sign = function() {
+  if (!this.parsedPath) this.prepareRequest()
+
+  if (this.request.signQuery) {
+    this.parsedPath.query['X-Amz-Signature'] = this.signature()
+  } else {
+    this.request.headers.Authorization = this.authHeader()
+  }
+
+  this.request.path = this.formatPath()
+
+  return this.request
+}
+
+RequestSigner.prototype.getDateTime = function() {
+  if (!this.datetime) {
+    var headers = this.request.headers,
+      date = new Date(headers.Date || headers.date || new Date)
+
+    this.datetime = date.toISOString().replace(/[:\-]|\.\d{3}/g, '')
+
+    // Remove the trailing 'Z' on the timestamp string for CodeCommit git access
+    if (this.isCodeCommitGit) this.datetime = this.datetime.slice(0, -1)
+  }
+  return this.datetime
+}
+
+RequestSigner.prototype.getDate = function() {
+  return this.getDateTime().substr(0, 8)
+}
+
+RequestSigner.prototype.authHeader = function() {
+  return [
+    'AWS4-HMAC-SHA256 Credential=' + this.credentials.accessKeyId + '/' + this.credentialString(),
+    'SignedHeaders=' + this.signedHeaders(),
+    'Signature=' + this.signature(),
+  ].join(', ')
+}
+
+RequestSigner.prototype.signature = function() {
+  var date = this.getDate(),
+      cacheKey = [this.credentials.secretAccessKey, date, this.region, this.service].join(),
+      kDate, kRegion, kService, kCredentials = credentialsCache.get(cacheKey)
+  if (!kCredentials) {
+    kDate = hmac('AWS4' + this.credentials.secretAccessKey, date)
+    kRegion = hmac(kDate, this.region)
+    kService = hmac(kRegion, this.service)
+    kCredentials = hmac(kService, 'aws4_request')
+    credentialsCache.set(cacheKey, kCredentials)
+  }
+  return hmac(kCredentials, this.stringToSign(), 'hex')
+}
+
+RequestSigner.prototype.stringToSign = function() {
+  return [
+    'AWS4-HMAC-SHA256',
+    this.getDateTime(),
+    this.credentialString(),
+    hash(this.canonicalString(), 'hex'),
+  ].join('\n')
+}
+
+RequestSigner.prototype.canonicalString = function() {
+  if (!this.parsedPath) this.prepareRequest()
+
+  var pathStr = this.parsedPath.path,
+      query = this.parsedPath.query,
+      headers = this.request.headers,
+      queryStr = '',
+      normalizePath = this.service !== 's3',
+      decodePath = this.service === 's3' || this.request.doNotEncodePath,
+      decodeSlashesInPath = this.service === 's3',
+      firstValOnly = this.service === 's3',
+      bodyHash
+
+  if (this.service === 's3' && this.request.signQuery) {
+    bodyHash = 'UNSIGNED-PAYLOAD'
+  } else if (this.isCodeCommitGit) {
+    bodyHash = ''
+  } else {
+    bodyHash = headers['X-Amz-Content-Sha256'] || headers['x-amz-content-sha256'] ||
+      hash(this.request.body || '', 'hex')
+  }
+
+  if (query) {
+    var reducedQuery = Object.keys(query).reduce(function(obj, key) {
+      if (!key) return obj
+      obj[encodeRfc3986Full(key)] = !Array.isArray(query[key]) ? query[key] :
+        (firstValOnly ? query[key][0] : query[key])
+      return obj
+    }, {})
+    var encodedQueryPieces = []
+    Object.keys(reducedQuery).sort().forEach(function(key) {
+      if (!Array.isArray(reducedQuery[key])) {
+        encodedQueryPieces.push(key + '=' + encodeRfc3986Full(reducedQuery[key]))
+      } else {
+        reducedQuery[key].map(encodeRfc3986Full).sort()
+          .forEach(function(val) { encodedQueryPieces.push(key + '=' + val) })
+      }
+    })
+    queryStr = encodedQueryPieces.join('&')
+  }
+  if (pathStr !== '/') {
+    if (normalizePath) pathStr = pathStr.replace(/\/{2,}/g, '/')
+    pathStr = pathStr.split('/').reduce(function(path, piece) {
+      if (normalizePath && piece === '..') {
+        path.pop()
+      } else if (!normalizePath || piece !== '.') {
+        if (decodePath) piece = decodeURIComponent(piece.replace(/\+/g, ' '))
+        path.push(encodeRfc3986Full(piece))
+      }
+      return path
+    }, []).join('/')
+    if (pathStr[0] !== '/') pathStr = '/' + pathStr
+    if (decodeSlashesInPath) pathStr = pathStr.replace(/%2F/g, '/')
+  }
+
+  return [
+    this.request.method || 'GET',
+    pathStr,
+    queryStr,
+    this.canonicalHeaders() + '\n',
+    this.signedHeaders(),
+    bodyHash,
+  ].join('\n')
+}
+
+RequestSigner.prototype.filterHeaders = function() {
+  var headers = this.request.headers,
+      extraHeadersToInclude = this.extraHeadersToInclude,
+      extraHeadersToIgnore = this.extraHeadersToIgnore
+  this.filteredHeaders = Object.keys(headers)
+    .map(function(key) { return [key.toLowerCase(), headers[key]] })
+    .filter(function(entry) {
+      return extraHeadersToInclude[entry[0]] ||
+        (HEADERS_TO_IGNORE[entry[0]] == null && !extraHeadersToIgnore[entry[0]])
+    })
+    .sort(function(a, b) { return a[0] < b[0] ? -1 : 1 })
+}
+
+RequestSigner.prototype.canonicalHeaders = function() {
+  if (!this.filteredHeaders) this.filterHeaders()
+
+  return this.filteredHeaders.map(function(entry) {
+    return entry[0] + ':' + entry[1].toString().trim().replace(/\s+/g, ' ')
+  }).join('\n')
+}
+
+RequestSigner.prototype.signedHeaders = function() {
+  if (!this.filteredHeaders) this.filterHeaders()
+
+  return this.filteredHeaders.map(function(entry) { return entry[0] }).join(';')
+}
+
+RequestSigner.prototype.credentialString = function() {
+  return [
+    this.getDate(),
+    this.region,
+    this.service,
+    'aws4_request',
+  ].join('/')
+}
+
+RequestSigner.prototype.defaultCredentials = function() {
+  var env = process.env
+  return {
+    accessKeyId: env.AWS_ACCESS_KEY_ID || env.AWS_ACCESS_KEY,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY || env.AWS_SECRET_KEY,
+    sessionToken: env.AWS_SESSION_TOKEN,
+  }
+}
+
+RequestSigner.prototype.parsePath = function() {
+  var path = this.request.path || '/'
+
+  // S3 doesn't always encode characters > 127 correctly and
+  // all services don't encode characters > 255 correctly
+  // So if there are non-reserved chars (and it's not already all % encoded), just encode them all
+  if (/[^0-9A-Za-z;,/?:@&=+$\-_.!~*'()#%]/.test(path)) {
+    path = encodeURI(decodeURI(path))
+  }
+
+  var queryIx = path.indexOf('?'),
+      query = null
+
+  if (queryIx >= 0) {
+    query = querystring.parse(path.slice(queryIx + 1))
+    path = path.slice(0, queryIx)
+  }
+
+  this.parsedPath = {
+    path: path,
+    query: query,
+  }
+}
+
+RequestSigner.prototype.formatPath = function() {
+  var path = this.parsedPath.path,
+      query = this.parsedPath.query
+
+  if (!query) return path
+
+  // Services don't support empty query string keys
+  if (query[''] != null) delete query['']
+
+  return path + '?' + encodeRfc3986(querystring.stringify(query))
+}
+
+aws4.RequestSigner = RequestSigner
+
+aws4.sign = function(request, credentials) {
+  return new RequestSigner(request, credentials).sign()
+}
+
+
+/***/ }),
+
+/***/ 22638:
+/***/ ((module) => {
+
+module.exports = function(size) {
+  return new LruCache(size)
+}
+
+function LruCache(size) {
+  this.capacity = size | 0
+  this.map = Object.create(null)
+  this.list = new DoublyLinkedList()
+}
+
+LruCache.prototype.get = function(key) {
+  var node = this.map[key]
+  if (node == null) return undefined
+  this.used(node)
+  return node.val
+}
+
+LruCache.prototype.set = function(key, val) {
+  var node = this.map[key]
+  if (node != null) {
+    node.val = val
+  } else {
+    if (!this.capacity) this.prune()
+    if (!this.capacity) return false
+    node = new DoublyLinkedNode(key, val)
+    this.map[key] = node
+    this.capacity--
+  }
+  this.used(node)
+  return true
+}
+
+LruCache.prototype.used = function(node) {
+  this.list.moveToFront(node)
+}
+
+LruCache.prototype.prune = function() {
+  var node = this.list.pop()
+  if (node != null) {
+    delete this.map[node.key]
+    this.capacity++
+  }
+}
+
+
+function DoublyLinkedList() {
+  this.firstNode = null
+  this.lastNode = null
+}
+
+DoublyLinkedList.prototype.moveToFront = function(node) {
+  if (this.firstNode == node) return
+
+  this.remove(node)
+
+  if (this.firstNode == null) {
+    this.firstNode = node
+    this.lastNode = node
+    node.prev = null
+    node.next = null
+  } else {
+    node.prev = null
+    node.next = this.firstNode
+    node.next.prev = node
+    this.firstNode = node
+  }
+}
+
+DoublyLinkedList.prototype.pop = function() {
+  var lastNode = this.lastNode
+  if (lastNode != null) {
+    this.remove(lastNode)
+  }
+  return lastNode
+}
+
+DoublyLinkedList.prototype.remove = function(node) {
+  if (this.firstNode == node) {
+    this.firstNode = node.next
+  } else if (node.prev != null) {
+    node.prev.next = node.next
+  }
+  if (this.lastNode == node) {
+    this.lastNode = node.prev
+  } else if (node.next != null) {
+    node.next.prev = node.prev
+  }
+}
+
+
+function DoublyLinkedNode(key, val) {
+  this.key = key
+  this.val = val
+  this.prev = null
+  this.next = null
+}
+
+
+/***/ }),
+
 /***/ 38793:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -311297,6 +311154,12 @@ const akeyless = __nccwpck_require__(94896);
 const https = __nccwpck_require__(65692);
 const core = __nccwpck_require__(37484);
 
+// superagent@10 (forced via package.json overrides for DEP0169) no longer sets a
+// default User-Agent. superagent@3 always sent "node-superagent/3.7.0". Some
+// Gateways / ingress / WAF policies reject requests with no User-Agent, which
+// surfaced as "Failed to login to Akeyless" after v1.1.7.
+const DEFAULT_USER_AGENT = 'node-superagent/3.7.0 akeyless-github-action';
+
 function api(url) {
     const client = new akeyless.ApiClient();
 
@@ -311309,13 +311172,15 @@ function api(url) {
     }
 
     client.defaultHeaders = {
-        'akeylessclienttype': 'github_action'
+        'akeylessclienttype': 'github_action',
+        'User-Agent': DEFAULT_USER_AGENT,
     }
     client.basePath = url;
     return new akeyless.V2Api(client);
 }
 
 exports.api = api;
+exports.DEFAULT_USER_AGENT = DEFAULT_USER_AGENT;
 
 
 /***/ }),
@@ -311331,9 +311196,10 @@ const path = __nccwpck_require__(16928);
 const akeylessCloud = __nccwpck_require__(81510);
 
 function handleActionFail(message, debugMessage) {
-    core.debug(debugMessage);  // Only visible with ACTIONS_RUNNER_DEBUG=true
-    core.setFailed(message);   // Always visible
-    throw new Error(message);
+    const detail = debugMessage || message;
+    core.error(detail);
+    core.setFailed(detail);
+    throw new Error(detail);
 }
 
 
@@ -311360,7 +311226,15 @@ async function jwtLogin(apiUrl, accessId) {
 
 async function awsIamLogin(apiUrl, accessId) {
     core.debug('getting aws cloud id');
-    const awsCloudId = await akeylessCloud.getCloudId('aws_iam')
+    let awsCloudId;
+    try {
+        awsCloudId = await akeylessCloud.getCloudId('aws_iam');
+    } catch (error) {
+        handleActionFail(
+            'Failed to login to Akeyless',
+            `Failed to obtain AWS cloud id (check runner IAM role / credentials): ${error && error.message ? error.message : error}`
+        );
+    }
     const opts = {
         "access-type": 'aws_iam',
         'access-id': accessId,
@@ -311420,7 +311294,10 @@ async function loginHelper(opts, apiUrl) {
         const authResult = await api.auth(authBody)
         return authResult
     } catch (error) {
-        handleActionFail('Failed to login to Akeyless', `Failed to login to AKeyless: ${typeof error === 'object' ? JSON.stringify(error) : error}`)
+        const detail = typeof error === 'object'
+            ? (error.body ? JSON.stringify(error.body) : JSON.stringify(error))
+            : String(error);
+        handleActionFail('Failed to login to Akeyless', `Failed to login to Akeyless: ${detail}`)
     }
 }
 
@@ -311439,9 +311316,10 @@ const allowedAccessTypes = Object.keys(login);
 async function akeylessLogin(accessId, accessType, apiUrl) {
     try {
         core.debug('fetch token');
-        return login[accessType](apiUrl, accessId);
+        return await login[accessType](apiUrl, accessId);
     } catch (error) {
-        handleActionFail('failed to fetch token', error.message);
+        // login helpers already call setFailed; rethrow so callers stop
+        throw error;
     }
 }
 
@@ -311456,8 +311334,10 @@ exports.allowedAccessTypes = allowedAccessTypes;
 
 /**
  * Cloud identity helpers for Akeyless cloud auth (AWS IAM / Azure AD / GCP).
- * AWS uses AWS SDK for JavaScript v3 credential providers + Smithy SigV4
- * (no aws-sdk v2 / aws4 url.parse).
+ *
+ * AWS credentials: AWS SDK v3 provider chain (no aws-sdk v2).
+ * AWS STS signing: aws4 — same algorithm/header layout as akeyless-cloud-id
+ * (Smithy SigV4 produced SignatureDoesNotMatch when Akeyless replayed the request).
  *
  * Provider SDKs are required lazily so jwt/access_key auth does not load them.
  */
@@ -311499,8 +311379,6 @@ async function getGcpCloudId(audience) {
   if (typeof client.fetchIdToken === 'function') {
     token = await client.fetchIdToken(audience);
   } else if (client.serviceAccountImpersonationUrl) {
-    // WIF: get ID token via IAM Credentials API.
-    // URL format: https://iamcredentials.googleapis.com/v1/{name=projects/*/serviceAccounts/*}:generateAccessToken
     const { IAMCredentialsClient } = __nccwpck_require__(58815);
     const url = client.serviceAccountImpersonationUrl;
     const name = url.match(/projects\/[^:]+/)?.[0];
@@ -311531,57 +311409,40 @@ async function getAwsCloudId() {
   });
 }
 
-async function stsGetCallerIdentity(creds) {
-  const { SignatureV4 } = __nccwpck_require__(75118);
-  const { HttpRequest } = __nccwpck_require__(72356);
-  const { Sha256 } = __nccwpck_require__(23156);
-
-  const body = 'Action=GetCallerIdentity&Version=2011-06-15';
-  const host = 'sts.amazonaws.com';
-  const region = 'us-east-1';
-
-  const signer = new SignatureV4({
-    credentials: {
-      accessKeyId: creds.accessKeyId,
-      secretAccessKey: creds.secretAccessKey,
-      sessionToken: creds.sessionToken,
-    },
-    region,
-    service: 'sts',
-    sha256: Sha256,
-  });
-
-  const request = new HttpRequest({
+/**
+ * Must match akeyless-cloud-id's aws4 signing layout so Akeyless can replay
+ * the STS GetCallerIdentity request without SignatureDoesNotMatch.
+ */
+function stsGetCallerIdentity(creds) {
+  const aws4 = __nccwpck_require__(88832);
+  const opts = {
     method: 'POST',
-    protocol: 'https:',
-    hostname: host,
-    path: '/',
+    service: 'sts',
+    body: 'Action=GetCallerIdentity&Version=2011-06-15',
+    region: 'us-east-1',
     headers: {
-      host,
-      'content-type': 'application/x-www-form-urlencoded; charset=utf-8',
-      'content-length': String(Buffer.byteLength(body)),
+      'Content-Length': 'Action=GetCallerIdentity&Version=2011-06-15'.length,
+      'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
     },
-    body,
-  });
+  };
 
-  const signed = await signer.sign(request);
+  aws4.sign(opts, creds);
 
   const h = {
-    Authorization: [signed.headers.authorization || signed.headers.Authorization],
-    'Content-Length': [String(Buffer.byteLength(body))],
-    Host: [host],
-    'Content-Type': ['application/x-www-form-urlencoded; charset=utf-8'],
-    'X-Amz-Date': [signed.headers['x-amz-date'] || signed.headers['X-Amz-Date']],
+    Authorization: [opts.headers.Authorization],
+    'Content-Length': [opts.body.length.toString()],
+    Host: [opts.headers.Host],
+    'Content-Type': [opts.headers['Content-Type']],
+    'X-Amz-Date': [opts.headers['X-Amz-Date']],
   };
-  const securityToken = signed.headers['x-amz-security-token'] || signed.headers['X-Amz-Security-Token'] || creds.sessionToken;
-  if (securityToken) {
-    h['X-Amz-Security-Token'] = [securityToken];
+  if (creds.sessionToken) {
+    h['X-Amz-Security-Token'] = [creds.sessionToken];
   }
 
   const obj = {
     sts_request_method: 'POST',
     sts_request_url: Buffer.from('https://sts.amazonaws.com/').toString('base64'),
-    sts_request_body: Buffer.from(body).toString('base64'),
+    sts_request_body: Buffer.from('Action=GetCallerIdentity&Version=2011-06-15').toString('base64'),
     sts_request_headers: Buffer.from(JSON.stringify(h)).toString('base64'),
   };
   return Buffer.from(JSON.stringify(obj)).toString('base64');
@@ -346682,7 +346543,7 @@ async function run() {
         }
     } catch (error) {
         core.debug(`Failed to login to Akeyless: ${error}`);
-        core.setFailed(`Failed to login to Akeyless`);
+        core.setFailed(`Failed to login to Akeyless: ${error && error.message ? error.message : error}`);
         return;
     }
 
