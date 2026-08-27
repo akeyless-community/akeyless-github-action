@@ -15,7 +15,7 @@
     "@aws-sdk/credential-providers": "^3.1090.0",
     "@azure/identity": "^4.8.0",
     "@google-cloud/iam-credentials": "^3.3.0",
-    "akeyless": "^3.3.16",
+    "akeyless": "^5.0.26",
     "aws4": "^1.13.2",
     "google-auth-library": "^9.15.1",
     "js-yaml": "^4.1.0"
