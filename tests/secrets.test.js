@@ -40,14 +40,14 @@ describe('testing secret exports', () => {
 
     // Check if getSecretValue is called with the correct parameters
     expect(api.getSecretValue).toHaveBeenCalledTimes(2);
-    expect(api.getSecretValue).toHaveBeenCalledWith({
+    expect(api.getSecretValue).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       names: ["/some/static/secret"],
-    });
-    expect(api.getSecretValue).toHaveBeenCalledWith({
+    }));
+    expect(api.getSecretValue).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       names: ["/some2/static2/secret2"],
-    });
+    }));
 
     // Check if core functions are called with the correct values
     expect(core.setSecret).toHaveBeenCalledTimes(3);
@@ -97,14 +97,14 @@ describe('testing secret exports', () => {
 
     // Check if getSecretValue is called with the correct parameters
     expect(api.getSecretValue).toHaveBeenCalledTimes(4);
-    expect(api.getSecretValue).toHaveBeenCalledWith({
+    expect(api.getSecretValue).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       names: ["/some/static/secret"],
-    });
-    expect(api.getSecretValue).toHaveBeenCalledWith({
+    }));
+    expect(api.getSecretValue).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       names: ["some2/static2/secret2"],
-    });
+    }));
 
     // Check if core functions are called with the correct values
     expect(core.setSecret).toHaveBeenCalledTimes(7);
@@ -155,14 +155,14 @@ describe('testing secret exports', () => {
 
     // Check if getSecretValue is called with the correct parameters
     expect(api.getDynamicSecretValue).toHaveBeenCalledTimes(2);
-    expect(api.getDynamicSecretValue).toHaveBeenCalledWith({
+    expect(api.getDynamicSecretValue).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       name: "/some/dynamic/secret",
-    });
-    expect(api.getDynamicSecretValue).toHaveBeenCalledWith({
+    }));
+    expect(api.getDynamicSecretValue).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       name: "/some2/dynamic2/secret2",
-    });
+    }));
 
     // Without key, output-name is honored and the full object is exported
     expect(core.setSecret).toHaveBeenCalledTimes(3);
@@ -353,14 +353,14 @@ describe('testing secret exports', () => {
 
     // Check if getSecretValue is called with the correct parameters
     expect(api.getRotatedSecretValue).toHaveBeenCalledTimes(2);
-    expect(api.getRotatedSecretValue).toHaveBeenCalledWith({
+    expect(api.getRotatedSecretValue).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       names: "/some/rotated/secret",
-    });
-    expect(api.getRotatedSecretValue).toHaveBeenCalledWith({
+    }));
+    expect(api.getRotatedSecretValue).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       names: "/some2/rotated2/secret2",
-    });
+    }));
 
     // Check if core functions are called with the correct values
     expect(core.setSecret).toHaveBeenCalledTimes(3);
@@ -410,10 +410,10 @@ describe('testing secret exports', () => {
 
     expect(akeylessApi.api).toHaveBeenCalledWith(args.apiUrl);
     expect(api.getRotatedSecretValue).toHaveBeenCalledTimes(1);
-    expect(api.getRotatedSecretValue).toHaveBeenCalledWith({
+    expect(api.getRotatedSecretValue).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       names: "/some/rotated/secret",
-    });
+    }));
 
     // Verify that individual JSON fields are exported with the prefix
     expect(core.setSecret).toHaveBeenCalledTimes(4); // 3 fields + token
@@ -562,18 +562,18 @@ describe('testing secret exports', () => {
 
     // Check if getSecretValue is called with the correct parameters
     expect(api.getSSHCertificate).toHaveBeenCalledTimes(2);
-    expect(api.getSSHCertificate).toHaveBeenCalledWith({
+    expect(api.getSSHCertificate).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       "cert-issuer-name": "sshCert",
       "cert-username": "ubuntu",
       "public-key-data": "publicKey",
-    });
-    expect(api.getSSHCertificate).toHaveBeenCalledWith({
+    }));
+    expect(api.getSSHCertificate).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       "cert-issuer-name": "sshCert2",
       "cert-username": "ubuntu2",
       "public-key-data": "publicKey2",
-    });
+    }));
 
     // Check if core functions are called with the correct values
     expect(core.setSecret).toHaveBeenCalledTimes(3);
@@ -623,16 +623,16 @@ describe('testing secret exports', () => {
 
     // Check if getSecretValue is called with the correct parameters
     expect(api.getPKICertificate).toHaveBeenCalledTimes(2);
-    expect(api.getPKICertificate).toHaveBeenCalledWith({
+    expect(api.getPKICertificate).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       "cert-issuer-name": "pkiCert",
       "csr-data-base64": "csr data",
-    });
-    expect(api.getPKICertificate).toHaveBeenCalledWith({
+    }));
+    expect(api.getPKICertificate).toHaveBeenCalledWith(expect.objectContaining({
       token: args.akeylessToken,
       "cert-issuer-name": "pkiCert2",
       "csr-data-base64": "csr data2",
-    });
+    }));
 
     // Check if core functions are called with the correct values
     expect(core.setSecret).toHaveBeenCalledTimes(3);

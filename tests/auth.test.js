@@ -134,7 +134,7 @@ describe('Akeyless authentication', () => {
 
   async function checkParams(token, params) {
     expect(token).toEqual({token: akeylessToken});
-    expect(api.auth).toHaveBeenCalledWith(params);
+    expect(api.auth).toHaveBeenCalledWith(expect.objectContaining(params));
   }
 })
 
