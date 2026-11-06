@@ -45,6 +45,7 @@ This guide describes how to use our various Authentication Methods to fetch [Sta
 | **access-type**                   | No       | `string`  | Default: `jwt`. The login method to use. Valid options are `jwt`/`access_key`/`universal_identity`/`aws_iam`/`azure_ad`/`gcp`/`k8s`. |
 | **token**                         | No       | `string`  | A valid Akeyless token.                                                                                                   |
 | **api-url**                       | No       | `string`  | Default: `https://api.akeyless.io`. The API endpoint to use.                                                               |
+| **audience-url**                  | No       | `string`  | Custom audience URL for the GitHub OIDC token (JWT only). If omitted, uses the repository owner URL.                     |
 | **static-secrets**                | No       | `string`  | A YAML list representing static secrets to fetch.                                                                          |
 | **dynamic-secrets**               | No       | `string`  | A YAML list representing dynamic secrets to fetch.                                                                         |
 | **rotated-secrets**               | No       | `string`  | A YAML list representing rotated secrets to fetch.                                                                         |

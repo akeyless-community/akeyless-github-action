@@ -41,11 +41,21 @@ describe('Akeyless authentication', () => {
     core.getIDToken = jest.fn(() => Promise.resolve(githubJwt));
 
     authOutput = await auth.akeylessLogin(accessId, accessType, apiUrl)
+    expect(core.getIDToken).toHaveBeenCalledWith();
     checkParams(authOutput, {
       'access-type': accessType,
       'access-id': accessId,
       'jwt': githubJwt
     })
+  })
+
+  it('uses the audience URL when fetching a JWT', async () => {
+    const audienceUrl = 'https://example.com/akeyless';
+    core.getIDToken = jest.fn(() => Promise.resolve('github-jwt'));
+
+    await auth.akeylessLogin(accessId, 'jwt', apiUrl, audienceUrl);
+
+    expect(core.getIDToken).toHaveBeenCalledWith(audienceUrl);
   })
 
   it('testing aws_iam login', async () => {

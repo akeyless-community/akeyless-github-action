@@ -468087,9 +468087,9 @@ async function accessKeyLogin(apiUrl, accessId) {
     return loginHelper(opts, apiUrl)
 }
 
-async function jwtLogin(apiUrl, accessId) {
+async function jwtLogin(apiUrl, accessId, audienceUrl) {
     core.debug('Fetching JWT from Github');
-    const githubToken = await core.getIDToken();
+    const githubToken = audienceUrl ? await core.getIDToken(audienceUrl) : await core.getIDToken();
     opts = {
         'access-type': 'jwt',
         'access-id': accessId,
@@ -468187,10 +468187,10 @@ const login = {
 
 const allowedAccessTypes = Object.keys(login);
 
-async function akeylessLogin(accessId, accessType, apiUrl) {
+async function akeylessLogin(accessId, accessType, apiUrl, audienceUrl) {
     try {
         core.debug('fetch token');
-        return await login[accessType](apiUrl, accessId);
+        return await login[accessType](apiUrl, accessId, audienceUrl);
     } catch (error) {
         // login helpers already call setFailed; rethrow so callers stop
         throw error;
@@ -468344,6 +468344,7 @@ const fetchAndValidateInput = () => {
         accessId: core.getInput('access-id'),
         accessType: core.getInput('access-type'),
         apiUrl: core.getInput('api-url'),
+        audienceUrl: core.getInput('audience-url'),
         staticSecrets: parseAndValidateSecrets('static-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
         dynamicSecrets: parseAndValidateSecrets('dynamic-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
         rotatedSecrets: parseAndValidateSecrets('rotated-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
@@ -503391,6 +503392,7 @@ async function run() {
         accessId,
         accessType,
         apiUrl,
+        audienceUrl,
         staticSecrets,
         dynamicSecrets,
         rotatedSecrets,
@@ -503412,7 +503414,7 @@ async function run() {
         if (token !== '') {
             akeylessToken = token;
         } else {
-            const akeylessLoginResponse = await akeylessLogin(accessId, accessType, apiUrl);
+            const akeylessLoginResponse = await akeylessLogin(accessId, accessType, apiUrl, audienceUrl);
             akeylessToken = akeylessLoginResponse['token'];
         }
     } catch (error) {

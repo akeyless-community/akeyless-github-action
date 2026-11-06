@@ -19,6 +19,9 @@ inputs:
     description: 'The API endpoint to use, defaults to https://api.akeyless.io.'
     default: 'https://api.akeyless.io'
     required: false
+  audience-url:
+    description: 'Custom audience URL for the GitHub OIDC token (JWT only). If omitted, uses the repository owner URL.'
+    required: false
   access-key:
     description: 'Akeyless Access Key'
     required: false
