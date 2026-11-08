@@ -13,6 +13,7 @@ async function run() {
         accessId,
         accessType,
         apiUrl,
+        audienceUrl,
         staticSecrets,
         dynamicSecrets,
         rotatedSecrets,
@@ -34,7 +35,7 @@ async function run() {
         if (token !== '') {
             akeylessToken = token;
         } else {
-            const akeylessLoginResponse = await akeylessLogin(accessId, accessType, apiUrl);
+            const akeylessLoginResponse = await akeylessLogin(accessId, accessType, apiUrl, audienceUrl);
             akeylessToken = akeylessLoginResponse['token'];
         }
     } catch (error) {

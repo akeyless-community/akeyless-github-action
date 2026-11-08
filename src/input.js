@@ -7,6 +7,7 @@ const fetchAndValidateInput = () => {
         accessId: core.getInput('access-id'),
         accessType: core.getInput('access-type'),
         apiUrl: core.getInput('api-url'),
+        audienceUrl: core.getInput('audience-url'),
         staticSecrets: parseAndValidateSecrets('static-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
         dynamicSecrets: parseAndValidateSecrets('dynamic-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
         rotatedSecrets: parseAndValidateSecrets('rotated-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
