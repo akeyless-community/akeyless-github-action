@@ -1,0 +1,15 @@
+# Automatic dependency update PRs, following the akeylesslabs AppSec baseline.
+# Check weekly; allow up to 100 open version-update PRs per update entry.
+# Existing repository-specific cooldowns, groups and registry settings are retained.
+version: 2
+updates:
+- package-ecosystem: github-actions
+  directory: /
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 100
+- package-ecosystem: npm
+  directory: /
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 100
