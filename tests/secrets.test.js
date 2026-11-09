@@ -285,6 +285,99 @@ describe('testing secret exports', () => {
     expect(core.setOutput).toHaveBeenCalledWith('TOKEN', 'ghp_from_string');
   });
 
+  describe('nested key paths', () => {
+    async function exportDynamicWithKey(key, secretValue) {
+      const args = {
+        akeylessToken: "akeylessToken",
+        dynamicSecrets: [{ name: "/k8s/dynamic", "output-name": "OUT", key }],
+        apiUrl: 'https://api.akeyless.io',
+        exportSecretsToOutputs: true,
+        exportSecretsToEnvironment: false,
+        parseJsonSecrets: false,
+      };
+      const api = { getDynamicSecretValue: jest.fn() };
+      akeylessApi.api.mockReturnValue(api);
+      api.getDynamicSecretValue.mockResolvedValueOnce(secretValue);
+      core.setSecret = jest.fn();
+      core.setOutput = jest.fn();
+      core.exportVariable = jest.fn();
+      core.setFailed = jest.fn();
+
+      await secrets.handleExportSecrets(args);
+    }
+
+    it('should extract a nested key from a static secret JSON string', async function () {
+      const args = {
+        akeylessToken: "akeylessToken",
+        staticSecrets: [{ name: "/path/to/secret", "output-name": "cluster_token", key: "status.token" }],
+        apiUrl: 'https://api.akeyless.io',
+        exportSecretsToOutputs: true,
+        exportSecretsToEnvironment: true,
+        parseJsonSecrets: false,
+      };
+      const api = { getSecretValue: jest.fn() };
+      akeylessApi.api.mockReturnValue(api);
+      api.getSecretValue.mockResolvedValueOnce({
+        "/path/to/secret": '{"status":{"token":"k8s-token"},"ttl_in_minutes":"10"}',
+      });
+      core.setSecret = jest.fn();
+      core.setOutput = jest.fn();
+      core.exportVariable = jest.fn();
+      core.setFailed = jest.fn();
+
+      await secrets.handleExportSecrets(args);
+
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(core.setSecret).toHaveBeenCalledWith('k8s-token');
+      expect(core.setOutput).toHaveBeenCalledWith('cluster_token', 'k8s-token');
+      expect(core.exportVariable).toHaveBeenCalledWith('cluster_token', 'k8s-token');
+    });
+
+    it('should extract a nested key from a dynamic secret object response', async function () {
+      await exportDynamicWithKey('status.token', { status: { token: 'k8s-token' }, ttl_in_minutes: '10' });
+
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(core.setOutput).toHaveBeenCalledWith('OUT', 'k8s-token');
+    });
+
+    it('should prefer an exact top-level key containing a dot over a nested path', async function () {
+      await exportDynamicWithKey('status.token', { 'status.token': 'flat-value', status: { token: 'nested-value' } });
+
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(core.setOutput).toHaveBeenCalledWith('OUT', 'flat-value');
+    });
+
+    it('should support array index segments', async function () {
+      await exportDynamicWithKey('items.1.token', { items: [{ token: 'first' }, { token: 'second' }] });
+
+      expect(core.setFailed).not.toHaveBeenCalled();
+      expect(core.setOutput).toHaveBeenCalledWith('OUT', 'second');
+    });
+
+    it('should fail when a nested path does not exist', async function () {
+      await exportDynamicWithKey('status.missing', { status: { token: 'k8s-token' } });
+
+      expect(core.setOutput).not.toHaveBeenCalledWith('OUT', expect.anything());
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining("Key 'status.missing' not found in secret"));
+    });
+
+    it('should fail when a path continues past a non-object value', async function () {
+      await exportDynamicWithKey('status.token.extra', { status: { token: 'k8s-token' } });
+
+      expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining("Key 'status.token.extra' not found in secret"));
+    });
+
+    it.each(['__proto__.toString', 'constructor.name', 'status.__proto__'])(
+      'should not resolve inherited properties (%s)',
+      async function (key) {
+        await exportDynamicWithKey(key, { status: { token: 'k8s-token' } });
+
+        expect(core.setOutput).not.toHaveBeenCalledWith('OUT', expect.anything());
+        expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining(`Key '${key}' not found in secret`));
+      }
+    );
+  });
+
   it('should expand dynamic secret JSON fields when parse-json-secrets is set without key', async function () {
     const args = {
       akeylessToken: "akeylessToken",

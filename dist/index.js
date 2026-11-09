@@ -468639,10 +468639,29 @@ function processSecretValue(secret, key) {
         throw new Error(`Error processing secret value: Secret value must be a JSON object or string to extract key '${key}'`);
     }
 
-    if (!Object.prototype.hasOwnProperty.call(secretObj, key)) {
-        throw new Error(`Error processing secret value: Key '${key}' not found in secret`);
+    return resolveKey(secretObj, key);
+}
+
+// An exact top-level key always wins over a nested dot-path, so flat keys containing '.' keep working.
+function resolveKey(secretObj, key) {
+    const hasOwn = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop);
+    const notFound = () => new Error(`Error processing secret value: Key '${key}' not found in secret`);
+
+    if (hasOwn(secretObj, key)) {
+        return secretObj[key];
     }
-    return secretObj[key];
+    if (!key.includes('.')) {
+        throw notFound();
+    }
+
+    let current = secretObj;
+    for (const segment of key.split('.')) {
+        if (current === null || typeof current !== 'object' || !hasOwn(current, segment)) {
+            throw notFound();
+        }
+        current = current[segment];
+    }
+    return current;
 }
 
 function exportSecretToOutput(variableName, secretValue, exportSecretsToOutputs, exportSecretsToEnvironment) {
