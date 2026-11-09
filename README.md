@@ -94,6 +94,32 @@ We can use:
 
 and in "steps.output.my_first_secret" the value will be "needed".
 
+### Nested fields
+
+Use dot notation in `key` to extract a nested field. Numeric segments index into arrays (for example `items.0.token`).
+
+For example, for the following secret value:
+```json
+{
+  "status": {
+    "token": "<token>"
+  },
+  "ttl_in_minutes": "10"
+}
+```
+
+We can use:
+
+```yaml
+    - name: "/path/to/secret"
+      output-name: "cluster_token"
+      key: "status.token"
+```
+
+and `${{ steps.fetch-secrets.outputs.cluster_token }}` will be the raw token value.
+
+If the secret has a top-level field whose name contains a dot (for example `"status.token"`), that exact field takes priority over the nested path.
+
 
 ### Debugging
 There is an option to get more detailed logs from the Akeyless Github Action by setting the `ACTIONS_RUNNER_DEBUG` secret or variable to `true` in the repository that contains the workflow.
