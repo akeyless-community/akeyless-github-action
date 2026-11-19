@@ -11,14 +11,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^2.0.3",
     "@aws-sdk/credential-providers": "^3.1090.0",
-    "@azure/identity": "^4.8.0",
+    "@azure/identity": "^4.14.1",
     "@google-cloud/iam-credentials": "^3.3.0",
     "akeyless": "^5.0.26",
     "aws4": "^1.13.2",
     "google-auth-library": "^9.15.1",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.3.2"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.3",
@@ -26,6 +26,7 @@
     "mock-fs": "^5.2.0"
   },
   "overrides": {
-    "superagent": "^10.2.2"
+    "superagent": "^10.2.2",
+    "uuid": "^11.1.1"
   }
 }
