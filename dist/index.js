@@ -474832,6 +474832,7 @@ const akeylessApi = __nccwpck_require__(33377);
 const fs = __nccwpck_require__(79896);
 const path = __nccwpck_require__(16928);
 const akeylessCloud = __nccwpck_require__(81510);
+const { formatError } = __nccwpck_require__(10438);
 
 function handleActionFail(message, debugMessage) {
     const detail = debugMessage || message;
@@ -474932,9 +474933,7 @@ async function loginHelper(opts, apiUrl) {
         const authResult = await api.auth(authBody)
         return authResult
     } catch (error) {
-        const detail = typeof error === 'object'
-            ? (error.body ? JSON.stringify(error.body) : JSON.stringify(error))
-            : String(error);
+        const detail = formatError(error);
         handleActionFail('Failed to login to Akeyless', `Failed to login to Akeyless: ${detail}`)
     }
 }
@@ -475096,6 +475095,25 @@ module.exports = {
 
 /***/ }),
 
+/***/ 10438:
+/***/ ((__unused_webpack_module, exports) => {
+
+// Describe an API error for the job log using only the HTTP status and the
+// server's error text. The SDK error object also holds the full HTTP request,
+// so it must never be logged as a whole.
+function formatError(error) {
+    if (typeof error !== 'object' || error === null) {
+        return String(error);
+    }
+    const message = error.body?.error || error.message || error.error?.message || 'request failed';
+    return error.status ? `${error.status} ${message}` : message;
+}
+
+exports.formatError = formatError;
+
+
+/***/ }),
+
 /***/ 95409:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -475202,6 +475220,7 @@ module.exports = {
 const core = __nccwpck_require__(37484);
 const akeylessApi = __nccwpck_require__(33377);
 const akeyless = __nccwpck_require__(94896);
+const { formatError } = __nccwpck_require__(10438);
 
 
 async function handleExportSecrets(args) {
@@ -475234,7 +475253,7 @@ async function handleExportSecrets(args) {
             try {
                 await handler(akeylessToken, secrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets);
             } catch (error) {
-                core.debug(`Failed to fetch ${key}: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+                core.debug(`Failed to fetch ${key}: ${formatError(error)}`);
                 core.setFailed(`Failed to fetch secret`);
             }
         } else {
@@ -475256,7 +475275,7 @@ async function exportStaticSecrets(akeylessToken, staticSecrets, apiUrl, exportS
         });
 
         const staticSecret = await api.getSecretValue(param).catch(error => {
-            core.debug(`getSecretValue Failed: ${JSON.stringify(error)}`);
+            core.debug(`getSecretValue Failed: ${formatError(error)}`);
             core.setFailed(`get secret value Failed`);
         });
 
@@ -475288,8 +475307,8 @@ async function exportDynamicSecrets(akeylessToken, dynamicSecrets, apiUrl, expor
             setOutput(dynamicSecret, dynamicParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
         }
     } catch (error) {
-        core.debug(`Failed to export dynamic secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
-        const errorMessage = error?.message || (typeof error === 'object' ? JSON.stringify(error) : error);
+        const errorMessage = formatError(error);
+        core.debug(`Failed to export dynamic secret: ${errorMessage}`);
         core.setFailed(`Failed to export dynamic secret: ${errorMessage}`);
     }
 }
@@ -475306,8 +475325,8 @@ async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, expor
             });
 
             let rotatedSecret = await api.getRotatedSecretValue(param).catch(error => {
-                core.debug(`getRotatedSecretValue Failed for secret '${secretName}': ${JSON.stringify(error)}`);
-                const errorMessage = error?.body?.error || error?.message || JSON.stringify(error);
+                const errorMessage = formatError(error);
+                core.debug(`getRotatedSecretValue Failed for secret '${secretName}': ${errorMessage}`);
                 core.setFailed(`Failed to get rotated secret '${secretName}': ${errorMessage}`);
                 throw error;
             });
@@ -475326,7 +475345,7 @@ async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, expor
             setOutput(secretValue, rotateParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
         }
     } catch (error) {
-        core.debug(`Failed to export rotated secret '${secretName}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+        core.debug(`Failed to export rotated secret '${secretName}': ${formatError(error)}`);
         const errorMessage = error?.body?.error || error?.message || 'Unknown error';
         core.setFailed(`Failed to export rotated secret '${secretName}': ${errorMessage}`);
     }
@@ -475397,7 +475416,7 @@ function processSecretValue(secret, key) {
         try {
             secretObj = JSON.parse(secret);
         } catch (e) {
-            throw new Error(`Error processing secret value: ${e.message}`);
+            throw new Error('Error processing secret value: secret is not valid JSON');
         }
     } else {
         throw new Error(`Error processing secret value: Secret value must be a JSON object or string to extract key '${key}'`);
@@ -475500,7 +475519,7 @@ async function handleCreateSecrets(args) {
         const { name, value } = secret;
 
         if (!name || !value) {
-            core.warning(`Skipping secret creation due to missing name or value: ${JSON.stringify(secret)}`);
+            core.warning('Skipping secret creation due to missing name or value');
             continue;
         }
 
@@ -475517,7 +475536,7 @@ async function handleCreateSecrets(args) {
             const result = await api.createSecret(param);
             core.info(`Secret ${name} created successfully`);
         } catch (error) {
-            core.warning(`Failed to create secret '${name}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+            core.warning(`Failed to create secret '${name}': ${formatError(error)}`);
         }
     }
 }
@@ -475540,7 +475559,7 @@ async function handleUpdateSecrets(args) {
         const { name, value } = secret;
 
         if (!name || !value) {
-            core.warning(`Skipping secret update due to missing name or value: ${JSON.stringify(secret)}`);
+            core.warning('Skipping secret update due to missing name or value');
             continue;
         }
 
@@ -475557,7 +475576,7 @@ async function handleUpdateSecrets(args) {
             const result = await api.updateSecretVal(param);
             core.info(`Secret ${name} updated successfully`);
         } catch (error) {
-            core.warning(`Failed to update secret '${name}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+            core.warning(`Failed to update secret '${name}': ${formatError(error)}`);
         }
     }
 }
@@ -511760,6 +511779,7 @@ async function run() {
         } else {
             const akeylessLoginResponse = await akeylessLogin(accessId, accessType, apiUrl, audienceUrl);
             akeylessToken = akeylessLoginResponse['token'];
+            core.setSecret(akeylessToken);
         }
     } catch (error) {
         core.debug(`Failed to login to Akeyless: ${error}`);
