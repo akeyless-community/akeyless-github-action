@@ -4,6 +4,7 @@ const akeylessApi = require('./akeyless_api');
 const fs = require('fs');
 const path = require('path');
 const akeylessCloud = require('./cloud_id');
+const { formatError } = require('./errors');
 
 function handleActionFail(message, debugMessage) {
     const detail = debugMessage || message;
@@ -104,9 +105,7 @@ async function loginHelper(opts, apiUrl) {
         const authResult = await api.auth(authBody)
         return authResult
     } catch (error) {
-        const detail = typeof error === 'object'
-            ? (error.body ? JSON.stringify(error.body) : JSON.stringify(error))
-            : String(error);
+        const detail = formatError(error);
         handleActionFail('Failed to login to Akeyless', `Failed to login to Akeyless: ${detail}`)
     }
 }

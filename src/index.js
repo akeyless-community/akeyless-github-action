@@ -37,6 +37,7 @@ async function run() {
         } else {
             const akeylessLoginResponse = await akeylessLogin(accessId, accessType, apiUrl, audienceUrl);
             akeylessToken = akeylessLoginResponse['token'];
+            core.setSecret(akeylessToken);
         }
     } catch (error) {
         core.debug(`Failed to login to Akeyless: ${error}`);

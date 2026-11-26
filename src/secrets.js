@@ -1,6 +1,7 @@
 const core = require('@actions/core');
 const akeylessApi = require('./akeyless_api');
 const akeyless = require('akeyless');
+const { formatError } = require('./errors');
 
 
 async function handleExportSecrets(args) {
@@ -33,7 +34,7 @@ async function handleExportSecrets(args) {
             try {
                 await handler(akeylessToken, secrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets);
             } catch (error) {
-                core.debug(`Failed to fetch ${key}: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+                core.debug(`Failed to fetch ${key}: ${formatError(error)}`);
                 core.setFailed(`Failed to fetch secret`);
             }
         } else {
@@ -55,7 +56,7 @@ async function exportStaticSecrets(akeylessToken, staticSecrets, apiUrl, exportS
         });
 
         const staticSecret = await api.getSecretValue(param).catch(error => {
-            core.debug(`getSecretValue Failed: ${JSON.stringify(error)}`);
+            core.debug(`getSecretValue Failed: ${formatError(error)}`);
             core.setFailed(`get secret value Failed`);
         });
 
@@ -87,8 +88,8 @@ async function exportDynamicSecrets(akeylessToken, dynamicSecrets, apiUrl, expor
             setOutput(dynamicSecret, dynamicParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
         }
     } catch (error) {
-        core.debug(`Failed to export dynamic secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
-        const errorMessage = error?.message || (typeof error === 'object' ? JSON.stringify(error) : error);
+        const errorMessage = formatError(error);
+        core.debug(`Failed to export dynamic secret: ${errorMessage}`);
         core.setFailed(`Failed to export dynamic secret: ${errorMessage}`);
     }
 }
@@ -105,8 +106,8 @@ async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, expor
             });
 
             let rotatedSecret = await api.getRotatedSecretValue(param).catch(error => {
-                core.debug(`getRotatedSecretValue Failed for secret '${secretName}': ${JSON.stringify(error)}`);
-                const errorMessage = error?.body?.error || error?.message || JSON.stringify(error);
+                const errorMessage = formatError(error);
+                core.debug(`getRotatedSecretValue Failed for secret '${secretName}': ${errorMessage}`);
                 core.setFailed(`Failed to get rotated secret '${secretName}': ${errorMessage}`);
                 throw error;
             });
@@ -125,7 +126,7 @@ async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, expor
             setOutput(secretValue, rotateParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
         }
     } catch (error) {
-        core.debug(`Failed to export rotated secret '${secretName}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+        core.debug(`Failed to export rotated secret '${secretName}': ${formatError(error)}`);
         const errorMessage = error?.body?.error || error?.message || 'Unknown error';
         core.setFailed(`Failed to export rotated secret '${secretName}': ${errorMessage}`);
     }
@@ -196,7 +197,7 @@ function processSecretValue(secret, key) {
         try {
             secretObj = JSON.parse(secret);
         } catch (e) {
-            throw new Error(`Error processing secret value: ${e.message}`);
+            throw new Error('Error processing secret value: secret is not valid JSON');
         }
     } else {
         throw new Error(`Error processing secret value: Secret value must be a JSON object or string to extract key '${key}'`);
@@ -299,7 +300,7 @@ async function handleCreateSecrets(args) {
         const { name, value } = secret;
 
         if (!name || !value) {
-            core.warning(`Skipping secret creation due to missing name or value: ${JSON.stringify(secret)}`);
+            core.warning('Skipping secret creation due to missing name or value');
             continue;
         }
 
@@ -316,7 +317,7 @@ async function handleCreateSecrets(args) {
             const result = await api.createSecret(param);
             core.info(`Secret ${name} created successfully`);
         } catch (error) {
-            core.warning(`Failed to create secret '${name}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+            core.warning(`Failed to create secret '${name}': ${formatError(error)}`);
         }
     }
 }
@@ -339,7 +340,7 @@ async function handleUpdateSecrets(args) {
         const { name, value } = secret;
 
         if (!name || !value) {
-            core.warning(`Skipping secret update due to missing name or value: ${JSON.stringify(secret)}`);
+            core.warning('Skipping secret update due to missing name or value');
             continue;
         }
 
@@ -356,7 +357,7 @@ async function handleUpdateSecrets(args) {
             const result = await api.updateSecretVal(param);
             core.info(`Secret ${name} updated successfully`);
         } catch (error) {
-            core.warning(`Failed to update secret '${name}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+            core.warning(`Failed to update secret '${name}': ${formatError(error)}`);
         }
     }
 }
